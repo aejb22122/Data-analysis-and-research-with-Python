@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+
+@author: annick-eudes
+"""
+# ---------------------- First program ---------------------------
+#                       data_analysis_1.py
+
+# First thing set the working directory - it is done by setting it in the folder
+# icon to the right;
+
+# Next step is to import all the library we will need
+
+import pandas
+import numpy
+
+# Importing the data set
+Data = pandas.read_csv("ool_pds.csv", low_memory = False)
+
+print("W1_P20 is the Personnal Annual income")
+print("W1_G2 is the US economy's situation")
+print("W1_F1 is the Percentage of how the respondants think about the future")
+
+# Determining the number of rows and columns in the dataset
+print("This is the number of observations in the dataset:")
+print(len(Data))            # Number of observations = rows
+
+print("This is the number of variables in the dataset:")
+print(len(Data.columns))    # Number of variables = columns
+
+# Because Python is treating the variables has string instead of numeric variables
+# we will convert them as numeric with the following
+Data["W1_G2"] = Data["W1_G2"].convert_objects(convert_numeric = True)
+Data["W1_P20"] = Data["W1_P20"].convert_objects(convert_numeric = True)
+Data["W1_F1"] = Data["W1_F1"].convert_objects(convert_numeric = True)
+
+
+# Explatory data analysis ~ starting with one variable
+# Univariate analysis
+print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
+c1 = Data["W1_G2"].value_counts(sort=False, dropna = False)
+print (c1)
+
+# The 'dropna = False' argument will display the missing values
+print("Percentage of the us economic situation : 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer")
+p1 = Data["W1_G2"].value_counts(sort=False, normalize = True)
+print (p1)
+
+print("Count of personal annual income :")
+c2 = Data["W1_P20"].value_counts(sort=False, dropna = False)
+print (c2)
+
+print("Percentage of personal annual income :")
+p2 = Data["W1_P20"].value_counts(sort=False, normalize = True)
+print (p2)
+
+print("Counts of When you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?")
+opt = Data["W1_F1"].value_counts(sort=False, dropna = False)
+print(opt)
+
+print("Percentage of how the respondants think about the future")
+opt2 = Data["W1_F1"].value_counts(sort=False, normalize = True)
+print(opt2)
+
+
+
+#
+# There are otherways to do this to have the same results, by using the .groupby function
+print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
+ct1 = Data.groupby("W1_G2").size()
+print(ct1)
+
+print("Count of personal annual income :")
+ct2 = Data.groupby("W1_P20").size()
+print(ct2)
+
+# To have the frequency, the code is simmilar, we just need to had the *100/len(Data)
+print("Percentage of the us economic situation : 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer")
+ct3 = Data.groupby("W1_G2").size()*100/len(Data)
+print(ct3)
+
+print("Percentage of personal annual income :")
+ct4 = Data.groupby("W1_P20").size()*100/len(Data)
+print(ct4)
+
+
+#
+# We can redefine the variables by adding logic statements in the codes.
+# We now focus on the economic outcome (considered being better) in the mid level income groups
+# i.e. 35,000 < income < 99,999 (For some reason the <= sends to much numbers)
+sub1 = Data[(Data["W1_P20"]> 10) & (Data["W1_P20"])< 15 & (Data["W1_G2"] == 1)]
+sub2 = sub1.copy()          # the sub1.copy eliminate a copy error that might occure.
+
+# Just to verify
+print(len(sub2))
+print(len(Data.columns))
+
+
+# Let's look at the frequency tables for the subset for the data frame
+print("Counts of the mid-level incomes")
+c3 = sub2["W1_P20"].value_counts(sort = False)
+
+print("Counts of repondants that consider that the us economic situation that consider that the country is doing better")
+c4 = sub2["W1_G2"].value_counts(sort= False)
+print(c4)
+
+print("Percentage of mid-level incomes")
+c5 = sub2["W1_P20"].value_counts(sort = False, normalize = True)
+print(c5)
+
+print("Percentage of repondants that consider that the us economic situation that consider that the country is doing better")
+c6 = sub2["W1_G2"].value_counts(sort = False, normalize = True)
+print(c6)
+
+
