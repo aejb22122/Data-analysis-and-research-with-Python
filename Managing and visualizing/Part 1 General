@@ -5,11 +5,11 @@
 @author: annick-eudes
 """
 # --------------------------------------------------------------------------------------------
-#                         DATA ANALYSIS AND VISUALISATION
+#                 PART 1. DATA ANALYSIS AND VISUALISATION
 # --------------------------------------------------------------------------------------------
 
 # ------------------------------- PRELIMINARIES  --------------------------------
-#
+
 # First thing set the working directory - it is done by setting it in the folder
 # icon to the right;
 
@@ -21,9 +21,7 @@ import seaborn                  # for plots
 import matplotlib.pyplot as plt # as plt is sort of a nickname for the library because
                                 # it is too long.
 import statsmodels.formula.api as smf # statsmodels
-import statsmodels.stats.multicomp as multi # statsmodels
-
-
+import statsmodels.stats.multicomp as multi # statsmodels and posthoc test
 
 # Importing the data set
 Data = pandas.read_csv("ool_pds.csv", low_memory = False)
@@ -51,7 +49,7 @@ print(len(Data.columns))    # Number of variables = columns
 
 
 
-# -------------------------- Part # 1 / Basis descriptive data analysis ----------------------------
+# -------------------------- Section # 1 / Basis descriptive data analysis ----------------------------
 
 
 # ---------------------------- Examination of frequency tables  ------------------------------------
@@ -62,6 +60,7 @@ print(len(Data.columns))    # Number of variables = columns
 # Making simple frequency tables [counts and frequencies].
 
 # Counts :
+    
 print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
 c1 = Data["W1_G2"].value_counts(sort=False, dropna = False)
 print (c1)
@@ -148,7 +147,13 @@ c7 = sub2["W1_G2"].value_counts(sort = False, normalize = True)
 print(c7)
 
 
-# -------------- PART # 2 / regarding our research ~ Making data management decisions --------------
+# -------------- Section # 2 / regarding our research ~ Making data management decisions --------------
+
+# Data Management
+
+# Data management ~ Making decions about the data
+# 1rst decide to code or not the missing values
+# 2ed Creating or not new variables
 
 # We will not be working with a subset of the data, because our research question, and
 # our hypothesis, needs to have a view of the optimisum in regards to the income level.
@@ -156,11 +161,6 @@ print(c7)
 # we are going to set responses of (-1 ~ Refused)  for these variables to missing,
 # so that Python disregards these values. We will code the missing values (nan).
 
-# Data Management
-
-# Data management ~ Making decions about the data
-# 1rst decide to code or not the missing values
-# Creating or not new variables
 
 # ------------------ Coding or recoding missing values ----------------------------------------
 
@@ -226,7 +226,7 @@ print(opt)
 
 
 
-#  ---------------------------- Part # 3 / Visualising data ~ Graphs -------------------------------
+#  ---------------------------- Section # 3 / Visualising data ~ Graphs -------------------------------
 
 # Visualizing categorical variables
 # in order for categorical variables to be ordered properly on the horizontal, or X axis, of
@@ -287,6 +287,7 @@ print(desc3)
 Data["W1_P20"] = Data["W1_P20"].convert_objects(convert_numeric=True)
 Data["W1_G2"] = Data["W1_G2"].convert_objects(convert_numeric=True)
 
+
 print("This is the Categorical -> Categorical graph of US economy's situtation vs Personnal annual income")
 seaborn.factorplot(x = "W1_P20", y = "W1_G2", data = Data, kind = "bar", ci = None)
 plt.xlabel("Personnal annual income")
@@ -299,42 +300,61 @@ plt.ylabel("How the respondants think about the future ")
 
 
 # --------------------------------------------------------------------------------------------
-#                             DATA ANALYSIS TOOLS
+#                               PART 2. DATA ANALYSIS TOOLS
 # --------------------------------------------------------------------------------------------
 
-# -------------- To calulate the F-Statistics
-# Analysis of variace Quantiative response variable (y) and Explanatory Categorical vairable (x)
-# Using ols function for calculating the F-statistic and associated p value
-model1 = smf.ols(formula='NUMCIGMO_EST ~ C(MAJORDEPLIFE)', data=sub1)
+# Now that we have a research question, selected the data set and managed our variables 
+# of interest and visualized their relationship graphically, we are ready to 
+# test those relationships statistically.
+
+
+
+
+# ---------------------------- To calulate the F-Statistics ------------------------------------
+# If we have a bi-variate statistical analysis tools for two variables i.e. y = ax + b + et
+# Analysis of variace Quantiative response variable (y) and Explanatory Categorical variable (x)
+# Using ols function for the computing of the F-statistic and associated p value.
+
+# As a reminder :
+
+print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
+print("W1_P20 is the Personnal Annual income")
+print("The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k)", end = '')
+print(" 12-15(50k-99k), 16-19 (100k-175k or more))")
+
+model1 = smf.ols(formula='W1_D1 ~ C(W1_P20)', data=Data)
 results1 = model1.fit()
 print (results1.summary())
 
-# To verify that the equality of the means
-sub2 = sub1[['NUMCIGMO_EST', 'MAJORDEPLIFE']].dropna()
 
-print ('means for numcigmo_est by major depression status')
-m1= sub2.groupby('MAJORDEPLIFE').mean()
+# To interpret this finding fully, we need to examine the actual means for the variables
+# We will create a new data frame with the quatitative response variable and the categorical 
+# explanatory variable
+sub3 = Data[['W1_D1', 'W1_P20']].dropna()
+
+
+# Means and standard deviations in the new dataframe :
+print ("Means for income level by the president's rating")
+m1= sub3.groupby('W1_P20').mean()
 print (m1)
 
-print ('standard deviations for numcigmo_est by major depression status')
-sd1 = sub2.groupby('MAJORDEPLIFE').std()
+
+print ("standard deviations for income level by the president's rating")
+sd1 = sub3.groupby('W1_P20').std()
 print (sd1)
 
-# I will call it sub3
-sub3 = sub1[['NUMCIGMO_EST', 'ETHRACE2A']].dropna()
 
-model2 = smf.ols(formula='NUMCIGMO_EST ~ C(ETHRACE2A)', data=sub3).fit()
-print (model2.summary())
 
-# View the result of the mean comparasion
-print ('means for numcigmo_est by major depression status')
-m2= sub3.groupby('ETHRACE2A').mean()
-print (m2)
+# In order to conduct post hoc paired comparisons in the context of my ANOVA, examining the association 
+# between ethnicity and number of cigarettes smoked per month, I'm going to use 
+# the Tukey HSDT, or Honestly Significant Difference Test. 
 
-print ('standard deviations for numcigmo_est by major depression status')
-sd2 = sub3.groupby('ETHRACE2A').std()
-print (sd2)
 
-mc1 = multi.MultiComparison(sub3['NUMCIGMO_EST'], sub3['ETHRACE2A'])
-res1 = mc1.tukeyhsd()
+# mc1 is the object that will store the mutiple comparisons test
+# then, I include the quantitative response variable and the categorical explanatory variable
+mc1 = multi.MultiComparison(sub3['W1_D1'], sub3['W1_P20'])
+res1 = mc1.tukeyhsd()       # result (mc1) x the tukey post hoc test
 print(res1.summary())
+
+
+
