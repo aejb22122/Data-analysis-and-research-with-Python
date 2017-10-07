@@ -1,6 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Fri Oct  6 12:31:50 2017
+
+@author: annick-eudes
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Oct  4 16:55:31 2017
+
+@author: annick-eudes
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 
 @author: annick-eudes
 """
@@ -15,16 +31,36 @@
 
 # Next step is to import all the library we will need
 #%%
+# Libraries
 
 import pandas as pd
 import numpy as np
-import seaborn                  # for plots
+import seaborn as sns                 # for plots
 import matplotlib.pyplot as plt # as plt is sort of a nickname for the library because
                                 # it is too long.
 import statsmodels.formula.api as smf # statsmodels
 import statsmodels.stats.multicomp as multi # statsmodels and posthoc test
 import scipy.stats              # For the Chi-Square test of independance
 
+#%%
+# IMPORTANT BUG FIXS !!!
+
+# Because, by default, the Pandas library often displays an abbreviated list of rows and columns
+# from our data frame. And I know the number of values for numsigmo_est is fairly long, 
+# We are going to add additional set option statements following the library import syntax 
+# that requests a display of the maximum number of rows and columns. 
+
+# The default in Python, limits this display to a subset of the data frame, 
+# and so including display, max, columns, or rows, none, removes that limit 
+# and allows all rows and columns to be displayed.
+
+#Set PANDAS to show all columns in DataFrame
+pd.set_option('display.max_columns', None)
+#Set PANDAS to show all rows in DataFrame
+pd.set_option('display.max_rows', None)
+
+# bug fix for display formats to avoid run time errors
+pd.set_option('display.float_format', lambda x:'%f'%x)
 
 #%%
 # Importing the data set:
@@ -34,6 +70,9 @@ df = pd.read_csv("ool_pds.csv", low_memory = False)
 # Because Python is treating the variables has string instead of numeric variables
 # we will convert them as numeric with the following function
 
+
+
+#%%
 """ setting variables you will be working with to numeric
 10/29/15 note that the code is different from what you see in the videos
  A new version of pandas was released that is phasing out the convert_objects(convert_numeric=True)
@@ -131,38 +170,6 @@ print(ct5)
 print("Percentage of when you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?")
 ct6 = df.groupby("W1_F1").size()*100/len(df)
 print(ct6)
-#%%
-
-# ----------------------- Working with a subset of the Data ----------------------------------------
-
-# We can redefine the variables by adding logic statements in the codes.
-# We now focus on the economic outcome (considered being better) in the mid level income groups
-# i.e. 35,000 < income < 99,999 (For some reason the <= sends to much numbers)
-
-sub1 = df[(df["W1_P20"]> 10) & (df["W1_P20"])< 15 & (df["W1_G2"] == 1)]
-sub2 = sub1.copy()          # the sub1.copy eliminate a copy error that might occure.
-
-# Just to verify
-print(len(sub2))            # Number of rows
-print(len(df.columns))    # Number of columns
-
-
-# Let's look at the frequency tables for the subset for the data frame
-print("Counts of the mid-level incomes")
-c4 = sub2["W1_P20"].value_counts(sort = False)
-print(c4)
-
-print("Counts of repondants that consider that the us economic situation that consider that the country is doing better")
-c5 = sub2["W1_G2"].value_counts(sort= False)
-print(c5)
-
-print("Percentage of mid-level incomes")
-c6 = sub2["W1_P20"].value_counts(sort = False, normalize = True)
-print(c6)
-
-print("Percentage of repondants that consider that the us economic situation that consider that the country is doing better")
-c7 = sub2["W1_G2"].value_counts(sort = False, normalize = True)
-print(c7)
 
 #%%
 # -------------- Section # 2 / regarding our research ~ Making data management decisions --------------
@@ -182,8 +189,7 @@ print(c7)
 
 # ------------------ Coding or recoding missing values ----------------------------------------
 
-print("Let's start the Data Management ~ decision about the data, missing values", end = '')
-print(" and creating secondary variables")
+print("Let's start the Data Management ~ decision about the data, missing values and creating secondary variables")
 df["W1_P20"]=df["W1_P20"].replace(-1, np.nan)
 df["W1_G2"]=df["W1_G2"].replace(-1, np.nan)
 df["W1_F1"]=df["W1_F1"].replace(-1, np.nan)
@@ -195,13 +201,11 @@ print("Count of personal annual income (with the recoding of the missing values)
 c2 = df["W1_P20"].value_counts(sort=False, dropna = False)
 print(c2)
 
-print("Counts of When you think about your future, are you generally 1 = optimistic, ",end='')
-print(" 2 = neither, or 3 = pessimistic? (with the recoding of the missing values)")
+print("Counts of When you think about your future, are you generally 1 = optimistic, 2 = neither, or 3 = pessimistic? (with the recoding of the missing values)")
 opt = df["W1_F1"].value_counts(sort=False, dropna = False)
 print(opt)
 
-print("Percentage of the us economic situation : 1 = Better, 2 = About the same, ",end='')
-print(" 3 = Worse, -1 = Refused to answer (with the recoding of the missing values)")
+print("Percentage of the us economic situation : 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer (with the recoding of the missing values)")
 p1 = df["W1_G2"].value_counts(sort=False, dropna = True)
 print(p1)
 
@@ -215,8 +219,7 @@ print(p1)
 
 # --------------------------- Grouping values within individual variables --------------------------
 
-print("The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k)", end = '')
-print(" 12-15(50k-99k), 16-19 (100k-175k or more))")
+print("The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k) 12-15(50k-99k), 16-19 (100k-175k or more))")
 df["W1_P20"] = pd.cut(df.W1_P20, [0, 7, 11, 15, 19])
 c10 = df["W1_P20"].value_counts(sort = False, dropna = True)
 print(c10)
@@ -226,8 +229,7 @@ print(c10)
 # --------------------------- Counts of the variables ------------------------------
 # For verification purposes
 
-print("Counts of the us economic situation 1 = Better, 2 = About the same, ",end='')
-print("3 = Worse, -1 = Refused to answer:")
+print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
 c1 = df["W1_G2"].value_counts(sort=False)
 print (c1)
 
@@ -235,8 +237,7 @@ print("Count of personal annual income :")
 c2 = df["W1_P20"].value_counts(sort=False)
 print (c2)
 
-print("Counts of When you think about your future, are you generally 1 = optimistic, ",end='')
-print(" 2 = neither, or 3 = pessimistic?")
+print("Counts of When you think about your future, are you generally 1 = optimistic, 2 = neither, or 3 = pessimistic?")
 opt = df["W1_F1"].value_counts(sort=False)
 print(opt)
 
@@ -246,7 +247,7 @@ print(opt)
 
 #  ---------------------------- Section # 3 / Visualising data ~ Graphs -------------------------------
 
-# Visualizing categorical variables
+# Visualizing categorical variables - IMPORTANT
 # in order for categorical variables to be ordered properly on the horizontal, or X axis, of
 # the univariate graph, we should convert your categorical variables, which are often formatted
 # as numeric variables, into a format that Python recognizes as categorical.
@@ -254,17 +255,33 @@ print(opt)
 # In our research question, we have W1_F1 (view on economic situation) has a categorical variable
 # and W1_F1, view of the respondants about the future, and W1_P20 witch is a ordinal variable (Still)
 # a type of categorical variable
+
+# We will convert the variables to categoric to provide the descriptive statistics
 df["W1_G2"] = df["W1_G2"].astype('category')
 df["W1_F1"] = df["W1_F1"].astype('category')
-df["W1_P20"] = df["W1_P20"].astype('category')
+df["W1_P20"] = df["W1_P20"].astype("category")
 
+
+# Standard deviation and other descriptive statistics are for quantitative variables
+print("Categorical variable's descriptive statistics are counts, top frequencies ...:")
+print("Describe the views of the economy's outcome")
+desc1 = df["W1_G2"].describe()
+print(desc1)
+
+print("Describe the views on the future by respondants")
+desc2 = df["W1_F1"].describe()
+print(desc2)
+
+print("Describe the personnal annual income for the respondants")
+desc3 = df["W1_P20"].describe()
+print(desc3)
 
 #%%
 
-# UNIVARIATE GRAPH
+# UNIVARIATE GRAPH FOR CATEGORICAL VARIABLES
 
 # Let's plot our categorical variables :
-seaborn.countplot(x = "W1_G2", data = df)
+sns.countplot(x = "W1_G2", data = df)
 plt.xlabel("-1 = refused, 1 = better, 2 = about the same, or 3 = worse")
 plt.title("Respondants views on the nation's economy compared to one year ago")
 
@@ -273,17 +290,31 @@ plt.title("Respondants views on the nation's economy compared to one year ago")
 # UNIVARIATE GRAPH
 # Graphique pour une variable : "Respondants views regardgin their future :
 
-seaborn.countplot(x = "W1_F1", data = df)
+sns.countplot(x = "W1_F1", data = df)
 plt.xlabel("-1 = refused, 1 = optimistic, 2 = neither optimistic nor pessimistic, 3 = pessimistic")
 plt.title("Respondants views regarding their future")
 
 #%%
 # UNIVARIATE GRAPH
-# Graohique pour une variable : Income groups reported by respondents :
+# Graphique pour une variable : Income groups reported by respondents :
 
-seaborn.countplot(x = "W1_P20", data = df)
+sns.countplot(x = "W1_P20", data = df)
 plt.xlabel("Interval of annual income :1-7 (5k- 24k), 8-11(25k-49k) 12-15(50k-99k), 16-19 (100k-175k or more)")
 plt.title("Income groups reported by respondents")
+
+#%%
+# Univariate quantitative variable
+# For quantitative variable, the syntax we use in the Python program is slightly different.
+# We'll use this quantitative variable :
+
+print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
+
+sns.distplot(df["W1_D1"].dropna(), kde=False);
+plt.xlabel("Rating of the US persident")
+plt.title("This is a plot rating the US President")
+print("This will give a histogram")
+
+
 #%%
 # Now let's display the graphics for the managed variables
 # Graphing a quatitative variable
@@ -306,48 +337,83 @@ desc3 = df["W1_P20"].describe()
 print(desc3)
 
 #%%
+# we're going to be visualizing our association of interest by exploring the relationship between two variables. 
 
 # ------------------ Make a decision about the role that each variable will play -----
 #
-# The explanatory variable is the  income level (W1_P20) the perception of the and the response
-# variable nation’s economic situation (W1_G2 and/or W1_F1). Thus, using the graphing decisions
+# The explanatory variable is the  income level (X = W1_P20) the perception of the and the response
+# variable nation’s economic situation (Y = W1_G2 and/or W1_F1). Thus, using the graphing decisions
 # flow chart we will use a Categorical to Categorical bar chart to plot the associations between
 # our explanatory and response variables.
 # We have to convert the categorical variables to numeric to do a C -> C bar chart.
+
+# A effacer
+# When doing the visualisations, the variables have to be in numeric (* sinon cela ne va pas marcher)
+# Pour éviter ce problème, il est mieux de reconvertir les variables qui étaient en catégorie
+# En des variables numériques.
+
+# NOTE: for a bivariate graph, where our response variable (Y) is categorical, we will actually 
+# need to convert this categorical response variable back to numeric. 
+# This is because the bivariate
+# graph displays a mean on the y axis.
 
 # Setting variables you will be working with to numeric
 
 # Ancienne facon de faire :
 #df["W1_P20"] = df["W1_P20"].convert_objects(convert_numeric=True)
 #df["W1_G2"] = df["W1_G2"].convert_objects(convert_numeric=True)
+
 # Pandas a été mis à jour, maintenant, il faut utiliser :
 
-df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
-df["W1_P20"] = pd.to_numeric(df["W1_P20"], errors="coerce")
-df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+#df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
+#df["W1_P20"] = pd.to_numeric(df["W1_P20"], errors="coerce")
+#df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
 
 #%%
+
+
 # BI VARIATE GRAPH :
 
-# Personnal income versus the US economy's situation
-
-# When doing the visualisations, the variables have to be in numeric (* sinon cela ne va pas marcher)
-# Pour éviter ce problème, il est mieux de reconvertir les variables qui étaient en catégorie
-# En des variables numériques.
+# Personnal income (Y = W1_G2) versus the US economy's situation ()
+# Convert our Y response variable back to numeric
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
 
 print("This is the Categorical -> Categorical graph of US economy's situtation vs Personnal annual income")
-seaborn.factorplot(x = "W1_P20", y = "W1_G2", data = df, kind = "bar", ci = None)
+sns.factorplot(x = "W1_P20", y = "W1_G2", data = df, kind = "bar", ci = None) # ci=None suppresses error bars.
 plt.xlabel("Personnal annual income")
 plt.ylabel("The US economy's situation")
 
+
 #%%
 # BI VARIATE GRAPH :
 
+# Convert our Y response variable back to numeric
+df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
 # Personnal income versus how respondants think about the future
 
-seaborn.factorplot(x = "W1_P20", y = "W1_F1", data = df, kind = "bar", ci = None)
+sns.factorplot(x = "W1_P20", y = "W1_F1", data = df, kind = "bar", ci = None)
 plt.xlabel("Personnal annual income")
 plt.ylabel("How the respondants think about the future")
+
+#%%
+# Graphing quantitative variables
+# We will use a scatter plot
+
+print("W1_D17: [Black Nationalists] How would you rate:")
+print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
+
+scater_plot1 = sns.regplot(x = "W1_D17", y = "W1_D1", fit_reg = False, data = df)
+plt.xlabel("How would you rate the president")
+plt.ylabel("Fatings from Black NAtionalists")
+plt.title("Scatter plot for the association between the rating of the US President by Black Nationalists")
+# We can add a fitting plot by removing the fit_reg = False
+
+#%%
+# bivariate graph, that is the categorical to quantitative bar chart. 
+
+
+
+
 
 #%%
 # --------------------------------------------------------------------------------------------
@@ -371,8 +437,7 @@ plt.ylabel("How the respondants think about the future")
 
 print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
 print("W1_P20 is the Personnal Annual income")
-print("The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k)", end = '')
-print(" 12-15(50k-99k), 16-19 (100k-175k or more))")
+print("The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k), 12-15(50k-99k), 16-19 (100k-175k or more))")
 
 model1 = smf.ols(formula='W1_D1 ~ C(W1_P20)', data=df)
 results1 = model1.fit()
@@ -413,3 +478,92 @@ print(res1.summary())
 
 #%%
 # ---------------------------- Chi square test of independance ------------------------------------
+# Two categorical variable
+
+# Is the perception of the us economic situation dependent or indedendent of 
+# the income levels?
+
+# In reference to our research question, the explanatory variable is the income 
+# level (W1_P20) the perception of the and the response variable nation’s 
+# economic situation (measured by W1_G2 and/or W1_F1). 
+
+# Explanatory variable, idependant (x) variable
+# W1_P20: is the Personnal Annual income
+
+# The response variables (Y):
+# W1_G2: is the US economy's situation
+# W1_F1: is the Percentage of how the respondants think about the future
+
+# 1) request the contengency table of observerved counts
+print("Contengency table for the US economy's situation and Personnal Annual income")
+print("The first results include the table of counts of the response variable by the explanatory variable :")
+count1 = pd.crosstab(df["W1_G2"], df["W1_P20"])
+print(count1)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum = count1.sum(axis=0)
+colpercent = count1/colsum
+print(colpercent)
+
+# 3) Chi-square :
+print("Chi-Square value, p-value, expected counts:")
+chi_sq = scipy.stats.chi2_contingency(count1)
+print(chi_sq)
+
+# If the output is set with the explanatory variable categories across the top of the table, 
+# and response variable categories down the side, it will be the column percent that we want 
+# to interpret. 
+
+#%%
+
+# If I what to graph the percent of personnal annual income that have a positive
+# view of the us economic outcoume
+
+# C -> C plot => To plot this we need to :
+# 1) set our explanatory variable (X) to categorical 
+# 2) set our response variable (Y) to numeric.  
+df["W1_P20"] = df["W1_P20"].astype("category")
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+
+# Plot
+# X the categorical variable and Y the numeric variable
+sns.factorplot(x = "W1_P20", y = "W1_G2", data=df, kind = "bar", ci=None)
+plt.xlabel("The Personnal Annual income")
+plt.ylabel("The US economy's situation")
+
+# If my explanatory variably had only two levels, I could interpret the two corresponding column 
+# percentages and be able to say which group had a significantly higher rate of nicotine dependents. 
+# But my explanatory variable has six categories. So I know that not all are equal. But I don't 
+# know which are different and which are not. 
+
+#%%
+#                               POST HOC TEST
+
+# When the explanatory variable has more than two levels, the chi-square statistic and associated 
+# p-value, do not provide insight into why the null hypothesis can be rejected. It does not tell 
+# us what way the rates of nicotine dependence are not equal across the frequency categories. 
+
+# If we reject a null hypothesis, we need to perform comparisons for each pair of nicotine 
+# dependent's rates across the six smoking frequency categories.
+
+# We need to do chi-square for each paired comparison
+# We need to recode to create new variables that allow us to choose only two frequency groups at a time.
+
+# --------------------------- Grouping values within individual variables --------------------------
+
+# It's easyer to understant if you graph the to variables
+# You need to recode for the comparaison of each "bar" of the graph
+# expluding form the statement all other values in the explanatory variable (i.e. x = "W1_P20")
+# We remaime this new added variable
+# And run the :
+# 1) request the contengency table of observerved counts
+# 2) generate the column % wich will show the % of in
+# 3) Compute the Chi-square :
+
+#%%
+
+# A reminder these are the levels of the explanatory variable : [0, 7, 11, 15, 19]
+# create a new variable with only the two levels we what to test
+
+# -------- Post Hoc test # 1 ---------
