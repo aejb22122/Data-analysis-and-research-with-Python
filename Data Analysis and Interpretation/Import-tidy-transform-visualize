@@ -567,3 +567,78 @@ plt.ylabel("The US economy's situation")
 # create a new variable with only the two levels we what to test
 
 # -------- Post Hoc test # 1 ---------
+# The hard way is to do all the chi-square of each pairs and levels of the categorical variable.
+# A reminder these are the levels of the explanatory variable : [0, 7, 11, 15, 19]
+# create a new variable with only the two levels we what to test
+# Repeat the process below :
+# --------------------------- Post Hoc test # 1 to n iterations for each pair groups ---------
+
+# 1 Recoding
+# bins = {0:7, 7:11}
+# df["COMP1v1"] = df["W1_P20"].map(bins)
+
+# 2 Cotengency table of obverved counts
+# count_v1 = pd.crosstab(df["W1_G2"], df["COMP1v1"])
+# print(count_v1)
+
+# 3 column percentages
+# colsum_count_v1 = count_v1.sum(axis=0)
+# colpct_count_v1 = count_v1/colsum
+# print(colpct_count_v1)
+
+# 4 Chi-square :
+# print("Chi-Square value, p-value, expected counts:")
+# chi_sq2 = scipy.stats.chi2_contingency(count_v1 )
+# print(chi_sq2)
+
+# ----- simplest way :
+# ----- One can do all the pair comparison on all; but an easier way to do this is by doing this :
+import itertools
+for pair in itertools.combinations([0, 7, 11, 15, 19], 2):       # Calculates all the combinasions
+    count_subcategory =pd.crosstab(df["W1_P20"].isin(pair), df["W1_G2"])  # and provides the cross tabs
+    print("chi sq test of subcategory: {}".format(pair))
+    print(scipy.stats.chi2_contingency(count_subcategory))
+
+
+#%%
+
+# One can do all the pair comparison on all; but an easier way to do this is by doing this :
+import itertools
+for pair in itertools.combinations([0, 7, 11, 15, 19], 2):       # Calculates all the combinasions
+    count_subcategory =pd.crosstab(df["W1_P20"].isin(pair), df["W1_G2"])  # and provides the cross tabs
+    print("chi sq test of subcategory: {}".format(pair))
+    print(scipy.stats.chi2_contingency(count_subcategory))
+#%%
+# ---------------------------- Pearson Correlation -----------------------------------------------
+# ---------------------------- Relationship between two quantitative variables -------------------
+
+# Now let's find the correlation coefficients. 
+# To do this, first, I create a new data frame that drops all missing, that is, N/A values for 
+# each of the variables from the data set.
+
+# The pearson coefficient can not be calculated in the presence of N/A's in the dataset :
+df_clean = df.dropna()
+
+# The scatter plot on the other hand will not be useful. In general the scatterplot is not useful
+# for discrete variables (i.e. those that take on a limited number of values).
+
+print("W1_N1J: How would you rate the wealthiest 1%?")
+print("W1_N1A: How would you rate people on welfare?")
+print("W1_P20 : Income level")
+
+df_clean["W1_P20"] = pd.to_numeric(df_clean["W1_P20"], errors="coerce")
+
+print("The association betwenn the income level and the rating of people on welfate")
+print("The correlation coefficient and the associate P-value.")
+print(scipy.stats.pearsonr(df_clean["W1_P20"], df_clean["W1_N1A"]))
+
+print("The association berween the income level and the rating of the wealthiest 1%?")
+print("The correlation coefficient and the assoicated P-value :")
+print(scipy.stats.pearsonr(df_clean["W1_P20"], df_clean["W1_N1J"]))
+
+print("The association between the rating of people on welfare by the wealthiest 1%")    
+print("the correlation coefficient and the associated p-value. ")
+print(scipy.stats.pearsonr(df_clean["W1_N1A"], df_clean["W1_N1J"]))
+
+
+
