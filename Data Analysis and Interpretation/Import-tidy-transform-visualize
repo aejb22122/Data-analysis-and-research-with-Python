@@ -625,5 +625,186 @@ print("The association between the rating of people on welfare by the wealthiest
 print("the correlation coefficient and the associated p-value. ")
 print(scipy.stats.pearsonr(df_clean["W1_N1A"], df_clean["W1_N1J"]))
 
+#%%
+# ---------------------------- Exploring Statistical Interactions -------------------------------------------------
+
+# ---------------------------- Chi square test of independance with moderation ------------------------------------
+# Two categorical variable and a moderating variable
+
+# First we need to test the existance of the relationship :
+
+# Is the perception of the us economic situation dependent or indedendent of 
+# the income levels?
+
+# In reference to our research question, the explanatory variable is the income 
+# level (W1_P20) the perception of the and the response variable nation’s 
+# economic situation (measured by W1_G2 and/or W1_F1). 
+
+# Explanatory variable, idependant (x) variable
+# W1_P20: is the Personnal Annual income
+
+# The response variables (Y):
+# W1_G2: is the US economy's situation
+# W1_F1: is the Percentage of how the respondants think about the future
+
+# 1) request the contengency table of observerved counts
+
+print("Contengency table for the US economy's situation and Personnal Annual income")
+print("The first results include the table of counts of the response variable by the explanatory variable :")
+count1 = pd.crosstab(df["W1_G2"], df["W1_P20"])
+print(count1)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum = count1.sum(axis=0)
+col_percent = count1/colsum
+print(col_percent)
+
+# 3) Chi-square :
+print("Chi-Square value, p-value, expected counts:")
+chi_sq = scipy.stats.chi2_contingency(count1)
+print(chi_sq)
+
+# If the output is set with the explanatory variable categories across the top of the table, 
+# and response variable categories down the side, it will be the column percent that we want 
+# to interpret. 
+
+
+
+# FIRST WE NEED TO DO A LITTLE BIT OF DATA MANAGEMENT
+
+# Convert to numeric
+df["W1_A1"] = pd.to_numeric(df["W1_A1"], errors = "coerce")
+# Let's start the Data Management ~ decision about the data, missing values
+df["W1_A1"]=df["W1_A1"].replace(-1, np.nan)
+
+# The variables and name the count column
+print("1 Extremely interested, 2 Very interested, 3 Moderately interested, 4 Slightly interested")
+print("5 Not interested at all, -1 Refused")
+b1 = pd.crosstab(index = df["W1_A1"], columns = "counts")
+print(b1)
+
+# 4) For the chi-square interactions : we need to define new data frames with only the levels of 
+#   the moderating variables = setting new data frames that includes individuals with ore without 
+# the levels of interest in politics :
+
+sub11 = df[(df["W1_A1"]== 1)].dropna()
+sub12 = df[(df["W1_A1"]== 2)].dropna()
+sub13 = df[(df["W1_A1"]== 3)].dropna()
+sub14 = df[(df["W1_A1"]== 4)].dropna()
+sub15 = df[(df["W1_A1"]== 5)].dropna()
+
+# Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are EXTREMELY interested in politics
+
+###             1 Extremely interested :
+
+# 1 contingency table of observed counts for those who are EXTREMELY interested in politique
+print("association between smoking quantity and nicotine dependence for those who are EXTREMELY interested in politics")
+count11 = pd.crosstab(sub11["W1_G2"], sub11["W1_P20"])
+print(count11)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum11 = count11.sum(axis=0)
+col_percent11 = count11/colsum
+print(col_percent11)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are EXTREMELY interested in politics:
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are EXTREMELY interested in politics")
+print("Chi-Square value, p-value, expected counts (EXTREMELY interested in politique):")
+chi_sq11 = scipy.stats.chi2_contingency(count11)
+print(chi_sq11)
+print("The relationship IS NOT significative")
+
+
+###             2 Very interested : 
+# Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are VERY INTERESTED in politics
+
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are VERY INTERESTED in politics")
+count12 = pd.crosstab(sub12["W1_G2"], sub12["W1_P20"])
+print(count12)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum12 = count12.sum(axis=0)
+col_percent12 = count12/colsum
+print(col_percent12)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are VERY INTERESTED in politics:
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are VERY INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (EXTREMELY interested in politique):")
+chi_sq12 = scipy.stats.chi2_contingency(count12)
+print(chi_sq12)
+print("The relationship IS NOT significative")
+
+
+###             3 Moderately interested
+
+# # Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are MODERATELY INTERESTED in politics
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are MODERATELY INTERESTED in politics in politics")
+count13 = pd.crosstab(sub13["W1_G2"], sub13["W1_P20"])
+print(count13)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum13 = count13.sum(axis=0)
+col_percent13 = count13/colsum
+print(col_percent13)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are MODERATELY INTERESTED in politics:
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are MODERATELY INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (MODERATELY INTERESTED in politique):")
+chi_sq13 = scipy.stats.chi2_contingency(count13)
+print(chi_sq13)
+print("The relationship IS significative")
+
+###             4 Slightly interested
+# # Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are SLIGHTLY INTERESTED in politics
+
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are SLIGHTLY INTERESTED in politics")
+count14 = pd.crosstab(sub14["W1_G2"], sub14["W1_P20"])
+print(count14)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum14 = count14.sum(axis=0)
+col_percent14 = count14/colsum
+print(col_percent14)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are SLIGHTLY INTERESTED in politics:
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are SLIGHTLY INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (SLIGHTLY INTERESTED in politique):")
+chi_sq14 = scipy.stats.chi2_contingency(count14)
+print(chi_sq14)
+print("The relationship IS NOT significative")
+
+# # Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are NOT INTERESTED AT ALL in politics
+
+##              5 Not interested at all
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are NOT INTERESTED AT ALL in politics")
+count15 = pd.crosstab(sub15["W1_G2"], sub15["W1_P20"])
+print(count15)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum15 = count15.sum(axis=0)
+col_percent15 = count15/colsum
+print(col_percent15)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are NOT INTERESTED AT ALL in politics :
+print("Chi-square for the US economy's situation and Personnal Annual income, for those who are NOT INTERESTED AT ALL in politics")
+print("Chi-Square value, p-value, expected counts (NOT INTERESTED AT ALL in politics):")
+chi_sq15 = scipy.stats.chi2_contingency(count15)
+print(chi_sq15)
+print("The relationship IS NOT significative")
+
+
+#%%
+
 
 
