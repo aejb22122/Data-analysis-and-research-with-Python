@@ -1,1 +1,241 @@
 
+# ------------------------------- PRELIMINARIES  --------------------------------
+
+# First thing set the working directory - it is done by setting it in the folder
+# icon to the right;
+
+# Next step is to import all the library we will need
+#%%
+# Libraries
+
+import pandas as pd
+import numpy as np
+import seaborn as sns                   # for plots
+import matplotlib.pyplot as plt         # as plt is sort of a nickname for the library because
+                                        # it is too long.
+import statsmodels.formula.api as smf   # statsmodels
+import statsmodels.stats.multicomp as multi # statsmodels and posthoc test
+import statsmodels.api as sm            # Statsmodel for the qqplots 
+import scipy.stats                      # For the Chi-Square test of independance
+
+#%%
+# IMPORTANT BUG FIXS !!!
+
+# Because, by default, the Pandas library often displays an abbreviated list of rows and columns
+# from our data frame. And I know the number of values for numsigmo_est is fairly long,
+# We are going to add additional set option statements following the library import syntax
+# that requests a display of the maximum number of rows and columns.
+
+# The default in Python, limits this display to a subset of the data frame,
+# and so including display, max, columns, or rows, none, removes that limit
+# and allows all rows and columns to be displayed.
+
+# Set PANDAS to show all columns in DataFrame
+pd.set_option('display.max_columns', None)
+# Set PANDAS to show all rows in DataFrame
+pd.set_option('display.max_rows', None)
+
+# Bug fix for display formats to avoid run time errors
+pd.set_option('display.float_format', lambda x:'%f'%x)
+
+#%%
+# Importing the data set:
+
+df = pd.read_csv("ool_pds.csv", low_memory = False)
+
+# Because Python is treating the variables has string instead of numeric variables
+# we will convert them as numeric with the following function
+#%%
+# Head of the data set
+# Head of the data set
+df.head(5)
+
+
+#%%
+""" setting variables you will be working with to numeric
+10/29/15 note that the code is different from what you see in the videos
+ A new version of pandas was released that is phasing out the convert_objects(convert_numeric=True)
+It still works for now, but it is recommended that the pandas.to_numeric function be
+used instead """
+
+""" These where the older codes :
+df["W1_G2"] = df["W1_G2"].convert_objects(convert_numeric = True)
+df["W1_P20"] = df["W1_P20"].convert_objects(convert_numeric = True)
+df["W1_F1"] = df["W1_F1"].convert_objects(convert_numeric = True)"""
+
+# New codes
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors = "coerce")
+df["W1_P20"] = pd.to_numeric(df["W1_P20"], errors = "coerce")
+df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors = "coerce")
+
+# ------------------ Coding or recoding missing values ----------------------------------------
+
+print("Let's start the Data Management ~ decision about the data, missing values and creating secondary variables")
+
+df["W1_P20"]=df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"]=df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"]=df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"]=df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"]=df["W1_D1"].replace(998, np.nan)
+
+# --------------------------------------------------------------------------------------------
+#                               PART 3. Regression Modeling in Practice
+# --------------------------------------------------------------------------------------------
+
+# ---------------------------- Basic linear regression ----------------------------
+
+# Data preparation and data management :
+
+# 1) Since our explanatory variable is categorical with more than two categories, 
+# you will need to collapse it down to two categories, 
+
+# Let's create a new variable to characterize the social economic status 
+# For revenues less than $50,000 to $59,999 (labeled 12), they will be coded has 0; 
+# and 1 otherwise
+
+def SocioEcoStatus (row):
+    if row["W1_P20"] < 12:
+        return 0
+    if row ["W1_P20"] > 12:
+        return 1
+    
+# Now, this new variable needs to be added to the dataframe
+df["SocioEcoStatus"] = df.apply(lambda row : SocioEcoStatus(row), axis = 1)
+
+# This is to check the accuracy of the codes
+print("This is the counts for the new variable : 1 = high revenus, 0 = low revenues")
+count20 = pd.crosstab(index = df["SocioEcoStatus"], columns = "counts")
+print(count20)
+# 
+
+
+## In our research question’s variables, we do not have a situation with a 
+##  a quantitative response variable. Nevertheless, we will be using another 
+## variable from the dataset to determine if the association between the rating 
+## of the US president at the time (quantitative response variable) is related 
+## to the socioeconomic statuts (categorical explanatory variable).
+
+# We will convert this variable to numeric
+df["W1_D1"] = pd.to_numeric(df["W1_D1"], errors = "coerce")
+
+
+# now, let us test a linear regression model 
+regression1 = smf.ols("W1_D1 ~ SocioEcoStatus", data = df).fit()
+print(regression1.summary())
+
+#%%
+# ---------------------------- Testing a Multiple Regression Model ----------------------------
+
+# Let's create a new variable caracterising the level of interest in politics
+
+# Let's create a new variable to characterize the interest in politics 
+def PolInt (row):
+    if row["W1_A1"] == 1:
+        return 1
+    elif row ["W1_A1"] == 2:
+        return 1
+    elif row["W1_A1"] == 3:
+        return 1
+    elif row["W1_A1"] == 4:
+        return 0
+    elif row ["W1_A1"] == 5:
+        return 0
+
+# Now, let's add this variable in the dataframe
+df["PolInt"] = df.apply(lambda row : PolInt(row), axis = 1)
+
+print("This is the counts for the new variable : 1 = interested in politics, 0 = Not interested in politics")
+c9 = pd.crosstab(index = df["PolInt"], columns = "counts")
+print(c9)
+
+regression2 = smf.ols("W1_D1 ~ SocioEcoStatus + PolInt", data = df).fit()
+print(regression2.summary())
+
+#%%
+
+# Let's add an other variable to try to eleviate the R2
+# W2_QB1C:  Did you vote for a candidate for President?
+# We will have to do a little bit of recoding :
+# We will be adding this variable Gender
+def gender (row):
+    if row["PPGENDER"] == 2:
+        return 0
+    if row["PPGENDER"] == 1:
+        return 1
+
+df["gender"] = df.apply(lambda row : gender(row), axis = 1)
+
+#%%
+print("This the gender variable’s count 1 = male, 0 = female")
+c79 = pd.crosstab(index = df["gender"], columns = "counts")
+print(c79)
+
+#%%
+
+# Now for the new regression; we are adding the gender variable
+regression3 = smf.ols("W1_D1 ~ SocioEcoStatus + W1_F1 + W1_G2 + gender", data =df).fit()
+print(regression3.summary())
+
+# All the variables are statistically significant, but the R2 is weak (0,011)
+
+#%%
+# But if we replace the social economic status with the personnal annual income wich is
+# a ordinnal categorical variable :
+
+# Now for the new regression; we are adding the gender variable
+regression4 = smf.ols("W1_D1 ~  PolInt + gender + W1_P20", data =df).fit()
+print(regression4.summary())
+# We found that the variables are significant ... Personnal annual income is definetly a confounding variable
+#%%
+
+# Let's incorporate the Personnal income in the regression
+
+regression5 = smf.ols("W1_D1 ~ W1_F1 + W1_G2 + gender + W1_P20", data = df).fit()
+print(regression5.summary())
+
+#%%
+# ---------------------------- Testing the validity of the Model ----------------------------
+# 1 . NORMALITY OF THE RESIDUALS 
+
+# qq-plot to evaluate the normality of the residual 
+print("This a qq-plot to evaluate the normality of the residual")
+figure1 = sm.qqplot(regression5.resid, line = "r")
+print(figure1)
+
+#%%
+# This is the plot of residuals
+stdres = pd.DataFrame(regression5.resid_pearson)
+plt.plot(stdres, 'o', ls = 'None')
+l = plt.axhline(y = 0, color = 'r')
+plt.ylabel('Standardized Residual')
+plt.xlabel('Observation Number')
+
+#%%
+# 2. REGRESSION DIAGNOSTIC PLOTS
+
+# The following Python code can be used to generate a few more plots to help us
+# determine how specific explanatory variables contribute to the fit of our model. 
+# additional regression diagnostic plots
+
+# As a reminder
+print("W1_P20 is the Personnal Annual income")
+print("W1_G2 is the US economy's situation")
+print("W1_F1 is the Percentage of how the respondants think about the future")
+print('W1_D1 is the rating of the former US president')
+
+figure2 = plt.figure(figsize = (10,7))
+figure2 = sm.graphics.plot_regress_exog(regression5,  "W1_G2", fig = figure2)
+print(figure2)
+
+#%%
+# 3. LEVERAGE PLOT
+
+# we can examine a leverage plot to identify observations that have an unusually 
+# large influence on the estimation of the predicted value of the response variable, 
+# Y, or that are outliers, or both.
+
+# leverage plot
+figure3 = sm.graphics.influence_plot(regression5, size=8)
+print(figure3)
+
+####
