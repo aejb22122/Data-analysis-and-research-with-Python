@@ -134,9 +134,21 @@ print(regression1.summary())
 #%%
 # ---------------------------- Testing a Multiple Regression Model ----------------------------
 
-# Let's create a new variable caracterising the level of interest in politics
+# ---------------- Preparation and data management prior to the linear regression -------------
 
+# We will start by doing a few data management and change the categorical variables that 
+# we'll be working with to two categories
+
+# Let's create a new variable caracterising the level of interest in politics
 # Let's create a new variable to characterize the interest in politics 
+
+# As a reminder
+print("W1_P20 is the Personnal Annual income has been transformed to a variable called SocioEcoStatus")
+print("W1_G2 is the US economy's situation has been transformed to economy_situation")
+print("W1_F1 is the perception of how the respondants think about the future is now : future_perception")
+print('W1_D1 is the rating of the former US president')
+print("W1_A12: Do you approve or disapprove of the way Barack Obama is handling his job as President?: is now approval")
+
 def PolInt (row):
     if row["W1_A1"] == 1:
         return 1
@@ -152,37 +164,95 @@ def PolInt (row):
 # Now, let's add this variable in the dataframe
 df["PolInt"] = df.apply(lambda row : PolInt(row), axis = 1)
 
-print("This is the counts for the new variable : 1 = interested in politics, 0 = Not interested in politics")
-c9 = pd.crosstab(index = df["PolInt"], columns = "counts")
-print(c9)
-
-regression2 = smf.ols("W1_D1 ~ SocioEcoStatus + PolInt", data = df).fit()
-print(regression2.summary())
-
-#%%
-
 # Let's add an other variable to try to eleviate the R2
 # W2_QB1C:  Did you vote for a candidate for President?
 # We will have to do a little bit of recoding :
 # We will be adding this variable Gender
+
 def gender (row):
     if row["PPGENDER"] == 2:
         return 0
     if row["PPGENDER"] == 1:
         return 1
-
+# This variable is then added to the dataframe
 df["gender"] = df.apply(lambda row : gender(row), axis = 1)
 
+
+def economy_situation  (row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis = 1)
+
+def future_perception (row):
+    if row["W1_F1"] == 1:
+        return 1
+    if row["W1_F1"] == 2:
+        return 0
+    if row["W1_F1"] == 3:
+        return 0
+# This variable is then added to the dataframe
+df["future_perception"] = df.apply(lambda row: future_perception(row), axis = 1)
+
+def approval (row):
+    if row["W1_A12"] == 1:
+        return 1
+    if row["W1_A12"] == 2:
+        return 0
+# This variable is then added to the dataframe
+df["approval"] = df.apply(lambda row: approval(row), axis = 1)
+
+
 #%%
+# This is to verify the acquracy of the codes 
+
+print("This is the counts for the new variable : 1 = high revenus, 0 = low revenues")
+count20 = pd.crosstab(index = df["SocioEcoStatus"], columns = "counts")
+print(count20)
+
+print("This is the counts for the variable PolInt : 1 = interested in politics, 0 = Not interested in politics")
+c1_a = pd.crosstab(index = df["PolInt"], columns = "counts")
+print(c1_a)
+
 print("This the gender variable’s count 1 = male, 0 = female")
-c79 = pd.crosstab(index = df["gender"], columns = "counts")
-print(c79)
+c1_b = pd.crosstab(index = df["gender"], columns = "counts")
+print(c1_b)
+
+print("This is the counts for the economy_situation : 1 = Better, 0 = Worse")
+c1_c = pd.crosstab(index = df["economy_situation"], columns = "counts")
+print(c1_c)
+
+print("This is the counts for future_perception : 1 = Optimistic, 0 = Pessimistic")
+c1_d = pd.crosstab(index = df["future_perception"], columns = "counts")
+print(c1_d)
+
+print("This is the counts for approval variable : 1 = Approve, 0 = Disapprove")
+c1_e = pd.crosstab(index = df["approval"], columns = "counts")
+print(c1_e)
+
+
+#%%
+regression2 = smf.ols("W1_D1 ~ SocioEcoStatus + PolInt", data = df).fit()
+print(regression2.summary())
+
+#%%
+regression6 = smf.ols("W1_D1 ~ SocioEcoStatus + economy_situation + future_perception + gender", data = df).fit()
+print(regression6.summary())
+
+#%%
+# This is the model we will keep :
+regression7 = smf.ols("W1_D1 ~ economy_situation + future_perception + gender + approval", data = df).fit()
+print(regression7.summary())
 
 #%%
 
 # Now for the new regression; we are adding the gender variable
-regression3 = smf.ols("W1_D1 ~ SocioEcoStatus + W1_F1 + W1_G2 + gender", data =df).fit()
-print(regression3.summary())
+#regression3 = smf.ols("W1_D1 ~ SocioEcoStatus + W1_F1 + W1_G2 + gender", data =df).fit()
+#print(regression3.summary())
 
 # All the variables are statistically significant, but the R2 is weak (0,011)
 
@@ -191,15 +261,15 @@ print(regression3.summary())
 # a ordinnal categorical variable :
 
 # Now for the new regression; we are adding the gender variable
-regression4 = smf.ols("W1_D1 ~  PolInt + gender + W1_P20", data =df).fit()
-print(regression4.summary())
+#regression4 = smf.ols("W1_D1 ~  PolInt + gender + W1_P20", data =df).fit()
+#print(regression4.summary())
 # We found that the variables are significant ... Personnal annual income is definetly a confounding variable
 #%%
 
 # Let's incorporate the Personnal income in the regression
 
-regression5 = smf.ols("W1_D1 ~ W1_F1 + W1_G2 + gender + W1_P20", data = df).fit()
-print(regression5.summary())
+#regression5 = smf.ols("W1_D1 ~ W1_F1 + W1_G2 + gender + W1_P20", data = df).fit()
+#print(regression5.summary())
 
 #%%
 # ---------------------------- Testing the validity of the Model ----------------------------
@@ -207,34 +277,28 @@ print(regression5.summary())
 
 # qq-plot to evaluate the normality of the residual 
 print("This a qq-plot to evaluate the normality of the residual")
-figure1 = sm.qqplot(regression5.resid, line = "r")
+figure1 = sm.qqplot(regression7.resid, line = "r")
 print(figure1)
 
 #%%
 # This is the plot of residuals
-stdres = pd.DataFrame(regression5.resid_pearson)
+stdres = pd.DataFrame(regression7.resid_pearson)
 plt.plot(stdres, 'o', ls = 'None')
 l = plt.axhline(y = 0, color = 'r')
 plt.ylabel('Standardized Residual')
 plt.xlabel('Observation Number')
 
 #%%
-# 2. REGRESSION DIAGNOSTIC PLOTS
+# 2. REGRESSION PLOTS
 
 # The following Python code can be used to generate a few more plots to help us
 # determine how specific explanatory variables contribute to the fit of our model. 
 # additional regression diagnostic plots
 
-# As a reminder
-print("W1_P20 is the Personnal Annual income")
-print("W1_G2 is the US economy's situation")
-print("W1_F1 is the Percentage of how the respondants think about the future")
-print('W1_D1 is the rating of the former US president')
 
 figure2 = plt.figure(figsize = (10,7))
-figure2 = sm.graphics.plot_regress_exog(regression5,  "W1_G2", fig = figure2)
+figure2 = sm.graphics.plot_regress_exog(regression7,  "approval", fig = figure2)
 print(figure2)
-
 #%%
 # 3. LEVERAGE PLOT
 
@@ -243,7 +307,7 @@ print(figure2)
 # Y, or that are outliers, or both.
 
 # leverage plot
-figure3 = sm.graphics.influence_plot(regression5, size=8)
+figure3 = sm.graphics.influence_plot(regression7, size=8)
 print(figure3)
 
-####
+#%%
