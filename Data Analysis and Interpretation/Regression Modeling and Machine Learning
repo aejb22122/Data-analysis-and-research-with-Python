@@ -311,3 +311,46 @@ figure3 = sm.graphics.influence_plot(regression7, size=8)
 print(figure3)
 
 #%%
+
+#%%
+
+# ----------------------------  Testing a Logistic Regression Model 
+
+# Data preparation for this :
+
+# 1) If your response variable is categorical with more than two categories, 
+# we will need to collapse it down to two categories, or subset your data to select observations from 2 categories.
+# 2) We will recode the Response variable into two categories
+
+#print("Let's collapse the explanatory variable into two groups")
+#df["W1_P20"] = pd.cut(df.W1_P20, [0, 15, 19])
+c110 =df["W1_P20"].value_counts(sort = False, dropna = True)
+print(c110)
+
+#%%
+logistic_reg1 = smf.logit(formula = 'future_perception ~ SocioEcoStatus + PolInt + economy_situation', data = df).fit()
+print (logistic_reg1.summary())
+
+print ("Odds Ratios")
+params = logistic_reg1.params
+conf = logistic_reg1.conf_int()
+conf['OR'] = params
+conf.columns = ['Lower CI', 'Upper CI', 'OR']
+print (np.exp(conf))
+
+#%%
+
+#%%
+logistic_reg2 = smf.logit(formula = 'future_perception ~ SocioEcoStatus + PolInt + economy_situation + gender', data = df).fit()
+print (logistic_reg2.summary())
+
+print ("Odds Ratios")
+params = logistic_reg2.params
+conf = logistic_reg2.conf_int()
+conf['OR'] = params
+conf.columns = ['Lower CI', 'Upper CI', 'OR']
+print (np.exp(conf))
+
+
+
+
