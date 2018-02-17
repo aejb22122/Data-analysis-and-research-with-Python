@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Updated on Wed Dec  6 13:40:58 2017
+Updated on Fri Feb 16 18:38:23 2018
 
 @author: annick-eudes
 """
-
+"""
 
 # ------------------------------- PRELIMINARIES  --------------------------------
 
@@ -13,20 +13,31 @@ Updated on Wed Dec  6 13:40:58 2017
 # icon to the right;
 
 # Next step is to import all the library we will need
-#%%
+
 # Libraries
 
-import pandas as pd
+import pandas as pd # is sort of a reference for the library
 import numpy as np
-import seaborn as sns                   # for plots
-import matplotlib.pyplot as plt         # as plt is sort of a nickname for the library because
-                                        # it is just too long.
-import statsmodels.formula.api as smf   # statsmodels
-import statsmodels.stats.multicomp as multi # statsmodels and posthoc test
-import statsmodels.api as sm            # Statsmodel for the qqplots 
-import scipy.stats                      # For the Chi-Square test of independance
+import seaborn as sns  # for plots
+import matplotlib.pyplot as plt  # as plt 
+import statsmodels.formula.api as smf  # statsmodels
+import statsmodels.stats.multicomp as multi  # statsmodels and posthoc test
+import statsmodels.api as sm  # Statsmodel for the qqplots
+import scipy.stats  # For the Chi-Square test of independance
 
-#%%
+# Machine learning
+# Libraries for decision trees
+
+from pandas import Series, DataFrame
+import os 
+
+from sklearn.cross_validation import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report
+import sklearn.metrics
+
+
+# %%
 # IMPORTANT BUG FIXS !!!
 
 # Because, by default, the Pandas library often displays an abbreviated list of rows and columns
@@ -40,11 +51,16 @@ import scipy.stats                      # For the Chi-Square test of independanc
 
 # Set PANDAS to show all columns in DataFrame
 pd.set_option('display.max_columns', None)
+
 # Set PANDAS to show all rows in DataFrame
 pd.set_option('display.max_rows', None)
 
 # Bug fix for display formats to avoid run time errors
-pd.set_option('display.float_format', lambda x:'%f'%x)
+pd.set_option('display.float_format', lambda x: '%f' % x)
+
+# This is for the machine learning with sklearn -> we need to locate where the data is lockated:
+os.chdir("/Users/annick/OneDrive/Documents/2. Data analysis and research/1. Data_Analysis_and_Interpretation/0. Python_Working_Directory")
+
 
 #%%
 # Importing the data set:
@@ -314,6 +330,8 @@ print(figure3)
 
 #%%
 
+# %%
+
 # ----------------------------  Testing a Logistic Regression Model 
 
 # Data preparation for this :
@@ -322,13 +340,13 @@ print(figure3)
 # we will need to collapse it down to two categories, or subset your data to select observations from 2 categories.
 # 2) We will recode the Response variable into two categories
 
-#print("Let's collapse the explanatory variable into two groups")
-#df["W1_P20"] = pd.cut(df.W1_P20, [0, 15, 19])
-c110 =df["W1_P20"].value_counts(sort = False, dropna = True)
+# print("Let's collapse the explanatory variable into two groups")
+# df["W1_P20"] = pd.cut(df.W1_P20, [0, 15, 19])
+c110 = df["W1_P20"].value_counts(sort=False, dropna=True)
 print(c110)
 
-#%%
-logistic_reg1 = smf.logit(formula = 'future_perception ~ SocioEcoStatus + PolInt + economy_situation', data = df).fit()
+# %%
+logistic_reg1 = smf.logit(formula='future_perception ~ SocioEcoStatus + PolInt + economy_situation', data=df).fit()
 print (logistic_reg1.summary())
 
 print ("Odds Ratios")
@@ -338,10 +356,9 @@ conf['OR'] = params
 conf.columns = ['Lower CI', 'Upper CI', 'OR']
 print (np.exp(conf))
 
-#%%
-
-#%%
-logistic_reg2 = smf.logit(formula = 'future_perception ~ SocioEcoStatus + PolInt + economy_situation + gender', data = df).fit()
+# %%
+logistic_reg2 = smf.logit(formula='future_perception ~ SocioEcoStatus + PolInt + economy_situation + gender',
+                          data=df).fit()
 print (logistic_reg2.summary())
 
 print ("Odds Ratios")
@@ -350,7 +367,3 @@ conf = logistic_reg2.conf_int()
 conf['OR'] = params
 conf.columns = ['Lower CI', 'Upper CI', 'OR']
 print (np.exp(conf))
-
-
-
-
