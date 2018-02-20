@@ -162,4 +162,3 @@ tree.export_graphviz(classifier, out_file=out)
 import pydotplus
 graph=pydotplus.graph_from_dot_data(out.getvalue())
 Image(graph.create_png())
-
