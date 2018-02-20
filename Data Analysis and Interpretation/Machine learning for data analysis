@@ -1,0 +1,165 @@
+# Libraries
+
+import pandas as pd
+import numpy as np
+import seaborn as sns  # for plots
+import matplotlib.pyplot as plt  # as plt is sort of a nickname for the library because it is too long.
+import statsmodels.formula.api as smf  # statsmodels
+import statsmodels.stats.multicomp as multi  # statsmodels and posthoc test
+import statsmodels.api as sm  # Statsmodel for the qqplots
+import scipy.stats  # For the Chi-Square test of independance
+
+# 
+import os 
+
+# Machine learning
+# Libraries for decision trees
+
+from sklearn.cross_validation import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report
+import sklearn.metrics
+
+import graphviz # for the graphing the decision tree
+# This is for the machine learning with sklearn
+# To indicate where the dataset is located:
+os.chdir("/Users/annick/OneDrive/Documents/2. Data analysis and research/1. Data_Analysis_and_Interpretation/0. Python_Working_Directory")
+
+# Because decision tree analyses cannot handle any NA's in our data set,
+# The next step is to create a clean data frame that drops all NA's.
+# Importing the data set:
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+
+# Let's do a bit of data management on the variables that we will be working with
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+df["W1_C1"] = df["W1_C1"].replace(-1, np.nan)
+df["W1_A1"] = df["W1_A1"].replace(-1, np.nan)
+df["W1_M1"] = df["W1_M1"].replace(-1, np.nan)
+df["W1_P11"] = df["W1_P11"].replace(-1, np.nan)
+
+# Getting the information about the dataset
+df.info()
+
+"""
+Running a Classification Tree:
+We will need to perform a decision tree analysis to test nonlinear relationships 
+among a series of explanatory variables and a binary, categorical response variable.
+
+
+"""
+# Let's create a new variable from the 3 level target variable :
+
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+#%%
+df["economy_situation"] = df["economy_situation"].astype("category")
+
+# Just to verify if the variable has been added to the dataset :
+df.info()
+
+print("This is the counts for the economy_situation : 1 = Better, 0 = Worse")
+count_economy_situation = pd.crosstab(index=df["economy_situation"], columns="counts")
+print(count_economy_situation)
+
+df_clean.dtypes
+df_clean.describe()
+
+"""
+Next, we need to set our explanatory (X) 
+and response or target variables (Y); and then include the train test split function for predictors and target.
+"""
+predictors = df_clean[["W1_A1" ,"W1_C1"]]
+targets = df_clean.economy_situation  # ==> accuracy_score = 0.77 in a other attempt?!
+
+# 2) Split into training and testing sets
+
+
+# And then include the train test split function for predictors and target.
+# And set the size ratio to 60 % for the training sample and 40% for the test sample 
+# by indicating test_size=.4. 
+
+# I'll do a 50/50 split of the sample
+
+pred_train, pred_test, tar_train, tar_test  =   train_test_split(predictors, targets, test_size= 0.4)
+# 3) Here I request the shape of these predictor and target training and
+# test samples.
+
+# This is the training sample : observations (% of the ratio of our original sample, and nb of explanatory variables")
+print("Training sample : observations and explanatory variables")
+print(pred_train.shape)
+
+print("The test sample : observations and explanatory variables")
+print(pred_test.shape)
+
+# Note that the total should give you the sample size, since whe decided to plit the sample into
+# 0.4 for the test sample and 0.6 for the training sample
+# Test it by doing len(df) lenght of the dataset
+
+#%%
+tar_train.shape
+#%%
+tar_test.shape
+#%%
+
+# Build the decision tree classifier model on training data
+classifier = DecisionTreeClassifier()
+#%%
+# We Then use this classifier.fit function which we pass the training predictors and
+# training targets to
+classifier = classifier.fit(pred_train,tar_train)
+#%%
+# Next we include the predict function where we predict for the test values
+predictions = classifier.predict(pred_test)
+#%%
+
+# then call in the confusion matrix function which we passed the target test sample to.
+# This shows the correct and incorrect classifications of our decision tree.
+# To check if the result make sence, at least, we should have the same number of labels of the 
+# target variable, hase we have of columns
+
+sklearn.metrics.confusion_matrix(tar_test,predictions)
+
+#%%
+# We can also look at the accuracy score which is approximately 0.77,
+# which suggests that the decision tree model has classified 77%
+# of the sample correctly as either regular or not regular smokers.
+
+print("This is the accuracy score of the classification model :")
+sklearn.metrics.accuracy_score(tar_test, predictions)
+
+# Classification
+#D isplaying the decision tree
+from sklearn import tree
+#from StringIO import StringIO
+
+from io import StringIO
+#from StringIO import StringIO 
+
+from IPython.display import Image
+out = StringIO()
+
+# This is the code to export the decision tree image in the folder where the notebook is lockated : out_file = None
+# image_tree = tree.export_graphviz(classifier, out_file = None)
+# graph = graphviz.Source(image_tree)
+# graph.render("decision tree for the assignment")
+
+# This is to code to have the decision tree image in the notbook :
+tree.export_graphviz(classifier, out_file=out)
+
+import pydotplus
+graph=pydotplus.graph_from_dot_data(out.getvalue())
+Image(graph.create_png())
+
