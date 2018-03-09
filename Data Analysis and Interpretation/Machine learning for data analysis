@@ -1,29 +1,53 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Updated on Thu Mar  8 21:02:43 2018
+
+@author: annick-eudes
+"""
+# ------------------------------- PRELIMINARIES  --------------------------------
+
+# First thing set the working directory - it is done by setting it in the folder
+# icon to the right;
+
+# Next step is to import all the library we will need
+
 # Libraries
 
 import pandas as pd
 import numpy as np
 import seaborn as sns  # for plots
-import matplotlib.pyplot as plt  # as plt is sort of a nickname for the library because it is too long.
+import matplotlib.pyplot as plt  # as plt is sort of a nickname for the library because
+# it is too long.
 import statsmodels.formula.api as smf  # statsmodels
 import statsmodels.stats.multicomp as multi  # statsmodels and posthoc test
 import statsmodels.api as sm  # Statsmodel for the qqplots
 import scipy.stats  # For the Chi-Square test of independance
 
-# 
-import os 
-
 # Machine learning
 # Libraries for decision trees
+
+from pandas import Series, DataFrame
+import os 
 
 from sklearn.cross_validation import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
 import sklearn.metrics
 
-import graphviz # for the graphing the decision tree
+import graphviz
+
+# Feature Importance - for the random trees
+from sklearn import datasets
+from sklearn.ensemble import ExtraTreesClassifier
+
+
 # This is for the machine learning with sklearn
 # To indicate where the dataset is located:
 os.chdir("/Users/annick/OneDrive/Documents/2. Data analysis and research/1. Data_Analysis_and_Interpretation/0. Python_Working_Directory")
+
+# ------------------------------ Machine learning codes -------------------------
+# ------------------------------ Classification trees ---------------------------
 
 # Because decision tree analyses cannot handle any NA's in our data set,
 # The next step is to create a clean data frame that drops all NA's.
@@ -162,3 +186,178 @@ tree.export_graphviz(classifier, out_file=out)
 import pydotplus
 graph=pydotplus.graph_from_dot_data(out.getvalue())
 Image(graph.create_png())
+
+
+#%%
+"""
+# ----------------------------  Building a Random Forest ----------------------
+# The research question is :
+# To what extent is the perception of the US situation (W1_G2) associated with the level of income (W1_P20)?
+
+# The variables of interest in our research question
+
+print("W1_P20 is the Personnal Annual income")
+print("W1_G2 is the US economy's situation")
+print("W1_F1 is the Percentage of how the respondants think about the future")
+print("")
+# Determining the number of rows and columns in the dataset
+
+
+Explanatory variables :
+# Target : economy's situation 
+    
+
+# W1_G2 Now thinking about the country's economy, would you say that compared to one year ago, the nation's economy is now better, about the same, or worse?
+
+# Predictors (Xi) that we have tested
+# W1_F1 When you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?
+# Don't add W1_F1 as a predictor
+# PPETHM: Race / Ethnicity
+# W1_P20 Which of the following income groups includes YOUR personal annual income (Do not include the income of other members of your household)?
+# PPINCIMP: Household Income
+# W1_C1: Generally speaking, do you usually think of yourself as a Democrat, a Republican, an Independent, or something else?
+# W1_A1 How interested are you in what’s going on in government and politics?
+# W1_D1 : [Barack Obama] How would you rate:
+# W1_M1: What is your religion?
+# W1_P11: Is anyone in your household currently unemployed?
+# PPAGE: Age
+# PPAGECAT: Age - 7 Categories
+
+
+
+"""
+#%%
+"""
+Running a random forest;
+among a series of explanatory variables and a binary, categorical response variable.
+
+"""
+
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+#%%
+df["economy_situation"] = df["economy_situation"].astype("category")
+
+#%%
+# Because random forest cannot handle any NA's in the data set,
+# the next step is to create a clean data frame that drops all NA's.
+ 
+df_clean = df.dropna()      # Because decision trees cannot handel na's
+
+#%%
+# To have a look at the data types and the summary statistics
+df_clean.dtypes
+df_clean.describe()
+
+# Next, we need to set our explanatory and response or target variables (Y).
+# And then include the train test split function for predictors and target.
+#%%
+# The we set our predictor and target variables => our explanatory and response
+# variables
+
+# predictors = df_clean[["W1_A1" ,"W1_C1"]] this gives an accuracy score of 0.749
+#predictors = df_clean[["W1_A1" ,"W1_C1", "W1_P20"]] this gives an accuracy score of 0.69250
+
+predictors = df_clean[["W1_A1" ,"W1_C1", "W1_P20", "PPAGE", "PPINCIMP", "W1_P11", "PPETHM"]]
+targets = df_clean.economy_situation  # ==> accuracy_score = 0.749 or 0.77 in a other attempt?!
+#%%
+"""
+Next I set my explanatory and response, or target variables, and
+then include the train test split function for predictors and target.
+And set the size ratio to 60% for the training sample, and 40% for
+the test sample.
+
+"""
+
+pred_train, pred_test, tar_train, tar_test  =   train_test_split(predictors, targets, test_size= 0.4)
+# 3) Here I request the shape of these predictor and target training and
+# test samples.
+
+# This is the training sample : observations (% of the ratio of our original sample, and nb of explanatory variables")
+print("Training sample : observations and explanatory variables")
+print(pred_train.shape)
+
+print("The test sample : observations and explanatory variables")
+print(pred_test.shape)
+#%%
+# From the sklearn library, we'll import the RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+#%%
+"""
+Now that training and test data sets have already been created, we'll initialize
+ the random forest classifier from SK Learn and indicate n_estimators= nb of variables.
+ n_estimators are the number of trees you would build with the random forest
+ algorithm.
+ """
+classifier = RandomForestClassifier(n_estimators = 7)
+classifier = classifier.fit(pred_train, tar_train)
+
+# Then we do the prediction on the test data set
+predictions = classifier.predict(pred_test)
+
+#%%
+# Confusion matrix and accuracy scores
+print("This is the confusion matrix :")
+sklearn.metrics.confusion_matrix(tar_test, predictions)
+
+#%%
+print("This is the accuracy score :")
+sklearn.metrics.accuracy_score(tar_test, predictions)
+#%%
+"""
+74% of the individuals where classified correctly.
+Given that we don't interpret individual trees in a random forest,
+the most helpful information to be gotten from a forest
+is the measured importance for each explanatory variable.
+==> orthe features.
+ Based on how many votes or splits each has produced in the 2 tree ensemble.
+ """
+ 
+model = ExtraTreesClassifier()
+model.fit(pred_train, tar_train)
+print(model.feature_importances_)
+
+#%%
+
+"""
+Bases on the results the most important explanatory variable is the political
+afficilation in determining the perception of the US economy's situation.
+
+So were "n" number of trees actually needed to get this correct rate of classification?
+To determine what growing larger number of trees has brought us in terms of correct
+classification.
+We're going to use code that builds for us different numbers of trees,
+from one to "n", and provides the correct classification rate for each.
+This code will build for us random forest classifier from one to "n",
+and then finding the accuracy score for each of those trees from one to "n",
+and storing it in an array.
+
+Running a different number of trees and see the effect
+ of that on the accuracy of the prediction
+"""
+
+trees=range(4)
+accuracy=np.zeros(4)
+
+for idx in range(len(trees)):
+   classifier=RandomForestClassifier(n_estimators=idx + 1)
+   classifier=classifier.fit(pred_train,tar_train)
+   predictions=classifier.predict(pred_test)
+   accuracy[idx]=sklearn.metrics.accuracy_score(tar_test, predictions)
+   
+plt.cla()
+plt.plot(trees, accuracy)
+
+"""
+From the plot of the accuracy score when we add new trees in the forest
+We don't need all these variables to predict the perception of the US economy's
+situation.
+
