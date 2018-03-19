@@ -17,23 +17,26 @@ Updated on Thu Mar  8 21:02:43 2018
 import pandas as pd
 import numpy as np
 import seaborn as sns  # for plots
-import matplotlib.pyplot as plt  # as plt is sort of a nickname for the library because
-# it is too long.
+import matplotlib.pyplot as plt  # as plt
 import statsmodels.formula.api as smf  # statsmodels
 import statsmodels.stats.multicomp as multi  # statsmodels and posthoc test
 import statsmodels.api as sm  # Statsmodel for the qqplots
 import scipy.stats  # For the Chi-Square test of independance
 
-# Machine learning
+# Machine learning libraries
 # Libraries for decision trees
 
 from pandas import Series, DataFrame
-import os 
+import os
+
+import sklearn.metrics
 
 from sklearn.cross_validation import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import classification_report
-import sklearn.metrics
+from sklearn.cross_validation import train_test_split
+#from sklearn.linear_model import lassoLarsCV
+from sklearn.linear_model import LassoCV, LassoLarsCV, LassoLarsIC
 
 import graphviz
 
@@ -41,10 +44,31 @@ import graphviz
 from sklearn import datasets
 from sklearn.ensemble import ExtraTreesClassifier
 
-
 # This is for the machine learning with sklearn
 # To indicate where the dataset is located:
 os.chdir("/Users/annick/OneDrive/Documents/2. Data analysis and research/1. Data_Analysis_and_Interpretation/0. Python_Working_Directory")
+
+# %%
+# IMPORTANT BUG FIXS !!!
+
+# Because, by default, the Pandas library often displays an abbreviated list of rows and columns
+# from our data frame. And I know the number of values for some variables are fairly long,
+# We are going to add additional set option statements following the library import syntax
+# that requests a display of the maximum number of rows and columns.
+
+# The default in Python, limits this display to a subset of the data frame,
+# and so including display, max, columns, or rows, none, removes that limit
+# and allows all rows and columns to be displayed.
+
+# Set PANDAS to show all columns in DataFrame
+pd.set_option('display.max_columns', None)
+
+# Set PANDAS to show all rows in DataFrame
+pd.set_option('display.max_rows', None)
+
+# Bug fix for display formats to avoid run time errors
+pd.set_option('display.float_format', lambda x: '%f' % x)
+
 
 # ------------------------------ Machine learning codes -------------------------
 # ------------------------------ Classification trees ---------------------------
@@ -360,4 +384,128 @@ plt.plot(trees, accuracy)
 From the plot of the accuracy score when we add new trees in the forest
 We don't need all these variables to predict the perception of the US economy's
 situation.
+"""
+# ----------------------------  Running a Lasso Regression Analysis ---------------------------------------------------------------
 
+# Loading the dataset
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+df.head(5)
+
+#%%
+
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+df["W1_C1"] = df["W1_C1"].replace(-1, np.nan)
+df["W1_A1"] = df["W1_A1"].replace(-1, np.nan)
+df["W1_M1"] = df["W1_M1"].replace(-1, np.nan)
+df["W1_P11"] = df["W1_P11"].replace(-1, np.nan)
+df["PPINCIMP"] = df["PPINCIMP"].replace(-1 , np.nan)
+df["PPINCIMP"] = df["PPINCIMP"].replace(-2, np.nan)
+df["PPETHM"] = df["PPETHM"].replace(-1, np.nan)
+df["PPETHM"] = df["PPETHM"].replace(-2, np.nan)
+
+#%%
+
+# The response variable in our research question
+
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+
+df["economy_situation"] = df["economy_situation"].astype("category")
+
+df_clean = df.dropna()
+
+#%%
+
+# Select predictor variables and target variable as separate data sets  
+predvar = df_clean[["W1_A1", "W1_C1", "W1_P20", "PPAGE", "PPINCIMP", "W1_P11", "PPETHM"]]
+
+# This is the target variable
+target = df_clean.economy_situation
+
+#%%
+
+# standardize predictors to have mean=0 and sd=1
+predictors = predvar.copy()
+
+from sklearn import preprocessing
+#%%
+predictors["W1_A1"] = preprocessing.scale(predictors["W1_A1"].astype("float64"))
+predictors["W1_C1"] = preprocessing.scale(predictors["W1_C1"].astype("float64"))
+predictors["W1_P20"] = preprocessing.scale(predictors["W1_P20"].astype("float64"))
+predictors["PPAGE"] = preprocessing.scale(predictors["PPAGE"].astype("float64"))
+predictors["PPINCIMP"] = preprocessing.scale(predictors["PPINCIMP"].astype("float64"))
+predictors["W1_P11"] = preprocessing.scale(predictors["W1_P11"].astype("float64"))
+predictors["PPETHM"] = preprocessing.scale(predictors["PPETHM"].astype("float64"))
+
+#%%
+# split data into train and test sets
+pred_train, pred_test, tar_train, tar_test = train_test_split(predictors, 
+                                                              target, 
+                                                              test_size=.3, 
+                                                              random_state=123)
+
+
+#%%
+# specify the lasso regression model
+model=LassoLarsCV(cv=10, precompute=False).fit(pred_train,tar_train)
+
+# print variable names and regression coefficients
+dict(zip(predictors.columns, model.coef_))
+
+# plot coefficient progression
+m_log_alphas = -np.log10(model.alphas_)
+ax = plt.gca()
+plt.plot(m_log_alphas, model.coef_path_.T)
+plt.axvline(-np.log10(model.alpha_), linestyle='--', color='k',
+            label='alpha CV')
+plt.ylabel('Regression Coefficients')
+plt.xlabel('-log(alpha)')
+plt.title('Regression Coefficients Progression for Lasso Paths')
+
+#%%
+# plot mean square error for each fold
+m_log_alphascv = -np.log10(model.cv_alphas_)
+plt.figure()
+plt.plot(m_log_alphascv, model.cv_mse_path_, ':')
+plt.plot(m_log_alphascv, model.cv_mse_path_.mean(axis=-1), 'k',
+         label='Average across the folds', linewidth=2)
+plt.axvline(-np.log10(model.alpha_), linestyle='--', color='k',
+            label='alpha CV')
+plt.legend()
+plt.xlabel('-log(alpha)')
+plt.ylabel('Mean squared error')
+plt.title('Mean squared error on each fold')
+         
+#%%
+# MSE from training and test data
+from sklearn.metrics import mean_squared_error
+train_error = mean_squared_error(tar_train, model.predict(pred_train))
+test_error = mean_squared_error(tar_test, model.predict(pred_test))
+print ('training data MSE')
+print(train_error)
+print ('test data MSE')
+print(test_error)
+#%%
+# R-square from training and test data
+rsquared_train=model.score(pred_train,tar_train)
+rsquared_test=model.score(pred_test,tar_test)
+print ('training data R-square')
+print(rsquared_train)
+print ('test data R-square')
+print(rsquared_test)
+
+#%%
