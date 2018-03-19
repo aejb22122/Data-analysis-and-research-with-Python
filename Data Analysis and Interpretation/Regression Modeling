@@ -332,7 +332,7 @@ print(figure3)
 
 # %%
 
-# ----------------------------  Testing a Logistic Regression Model 
+# ----------------------------  Testing a Logistic Regression Model -----------------------
 
 # Data preparation for this :
 
