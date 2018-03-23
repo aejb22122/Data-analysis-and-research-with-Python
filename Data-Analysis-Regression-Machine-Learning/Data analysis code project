@@ -1,0 +1,1972 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Updated on Mon Mar 19 16:57:16 2018
+@author: annick-eudes
+"""
+
+# --------------------------------------------------------------------------------------------
+#                 PART 1. DATA ANALYSIS AND VISUALISATION
+# --------------------------------------------------------------------------------------------
+
+# ------------------------------- PRELIMINARIES  --------------------------------
+"""
+When needed, install the graphviz package trought the command line :
+ANNICKs-MacBook-Pro:~ annick-eudes$ conda install graphviz
+
+"""
+# First thing set the working directory - it is done by setting it in the folder
+# icon to the right;
+
+# Next step is to import all the library we will need
+
+# Libraries
+
+import pandas as pd
+import numpy as np
+import seaborn as sns  # for plots
+import matplotlib.pyplot as plt  # as plt
+import statsmodels.formula.api as smf  # statsmodels
+import statsmodels.stats.multicomp as multi  # statsmodels and posthoc test
+import statsmodels.api as sm  # Statsmodel for the qqplots
+import scipy.stats  # For the Chi-Square test of independance
+
+# Machine learning libraries
+# Libraries for decision trees
+
+from pandas import Series, DataFrame
+import os
+
+import sklearn.metrics
+
+from sklearn.cross_validation import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report
+from sklearn.cross_validation import train_test_split
+#from sklearn.linear_model import lassoLarsCV
+from sklearn.linear_model import LassoCV, LassoLarsCV, LassoLarsIC
+
+
+
+# Feature Importance - for the random trees
+from sklearn import datasets
+from sklearn.ensemble import ExtraTreesClassifier
+
+
+# Feature importance - for the Kmeans
+from sklearn import preprocessing
+from sklearn.cluster import KMeans
+
+
+import graphviz
+
+# %%
+# IMPORTANT BUG FIXS !!!
+
+# Because, by default, the Pandas library often displays an abbreviated list of rows and columns
+# from our data frame. And I know the number of values for some variables are fairly long,
+# We are going to add additional set option statements following the library import syntax
+# that requests a display of the maximum number of rows and columns.
+
+# The default in Python, limits this display to a subset of the data frame,
+# and so including display, max, columns, or rows, none, removes that limit
+# and allows all rows and columns to be displayed.
+
+# Set PANDAS to show all columns in DataFrame
+pd.set_option('display.max_columns', None)
+
+# Set PANDAS to show all rows in DataFrame
+pd.set_option('display.max_rows', None)
+
+# Bug fix for display formats to avoid run time errors
+pd.set_option('display.float_format', lambda x: '%f' % x)
+
+# %%
+# Importing the data set:
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+
+# Because Python is treating the variables has string instead of numeric variables
+# we will convert them as numeric with the following function
+# %%
+# Head of the data set
+# Head of the data set
+df.head(5)
+
+# %%
+"""
+setting variables you will be working with to numeric
+10/29/15 note that the code is different
+ A new version of pandas was released that is phasing out the convert_objects(convert_numeric=True)
+It still works for now, but it is recommended that the pandas.to_numeric function be
+used instead. These where the older codes :
+df["W1_G2"] = df["W1_G2"].convert_objects(convert_numeric = True)
+df["W1_P20"] = df["W1_P20"].convert_objects(convert_numeric = True)
+df["W1_F1"] = df["W1_F1"].convert_objects(convert_numeric = True)
+"""
+
+# New codes
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+df["W1_P20"] = pd.to_numeric(df["W1_P20"], errors="coerce")
+df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
+
+# %%
+# The research question is :
+# To what extent is the perception of the US situation (W1_G2) associated with the level of income (W1_P20)?
+
+# The variables of interest in our research question
+
+print("W1_P20 is the Personal Annual income")
+print("W1_G2 is the US economy's situation")
+print("W1_F1 is the Percentage of how the respondants think about the future")
+print("")
+# Determining the number of rows and columns in the dataset
+
+print("This is the number of observations in the dataset:")
+print(len(df))  # Number of observations = rows
+
+print("This is the number of variables in the dataset:")
+print(len(df.columns))  # Number of variables = columns
+
+# %%
+# -------------------------- Section # 1 / Basis descriptive data analysis -------------------------
+
+# ---------------------------- Examination of frequency tables  ------------------------------------
+
+# Explatory data analysis ~ starting with one variable
+# Univariate analysis
+# The 'dropna = False' argument will display the missing values
+# Making simple frequency tables [counts and frequencies].
+
+# Counts :
+
+print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
+c1 = df["W1_G2"].value_counts(sort=False, dropna=False)
+print(c1)
+
+print("Count of personal annual income :")
+c2 = df["W1_P20"].value_counts(sort=False, dropna=False)
+print(c2)
+
+print("Counts of when you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?")
+c3 = df["W1_F1"].value_counts(sort=False, dropna=False)
+print(c3)
+
+# frequencies
+
+print("Percentage of the us economic situation : 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer")
+p1 = df["W1_G2"].value_counts(sort=False, normalize=True)
+print(p1)
+
+print("Percentage of personal annual income :")
+p2 = df["W1_P20"].value_counts(sort=False, normalize=True)
+print(p2)
+
+print("Percentage of how the respondants think about the future")
+p3 = df["W1_F1"].value_counts(sort=False, normalize=True)
+print(p3)
+
+# %%
+
+# There are otherways to do this to have the same results, by using the .groupby() function
+
+print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
+ct1 = df.groupby("W1_G2").size()
+print(ct1)
+
+print("Count of personal annual income :")
+ct2 = df.groupby("W1_P20").size()
+print(ct2)
+
+print("Counts of when you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?")
+ct3 = df.groupby("W1_F1").size()
+print(ct3)
+
+# To have the frequency, the code is simmilar, we just need to had the *100/len(Data)
+
+print("Percentage of the us economic situation : 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer")
+ct4 = df.groupby("W1_G2").size() * 100 / len(df)
+print(ct4)
+
+print("Percentage of personal annual income :")
+ct5 = df.groupby("W1_P20").size() * 100 / len(df)
+print(ct5)
+
+print(
+    "Percentage of when you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?")
+ct6 = df.groupby("W1_F1").size() * 100 / len(df)
+print(ct6)
+
+# %%
+# -------------- Section # 2 / regarding our research ~ MAKING DATA MANAGEMENT DECISIONS -----------
+
+# Data Management
+
+# Data management ~ Making decisions about the data
+# 1rst decide to code or not the missing values
+# 2ed Creating or not new variables
+
+# We will not be working with a subset of the data, because our research question, and
+# our hypothesis, needs to have a view of the optimism in regards to the income level.
+# 1rst we will code the missing values
+# we are going to set responses of (-1 ~ Refused)  for these variables to missing,
+# so that Python disregards these values. We will code the missing values (nan).
+
+# ------------------ Coding or recoding missing values ----------------------------------------
+
+print("Let's start the Data Management ~ decision about the data, missing values and creating secondary variables")
+
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+
+# Let's have a look at the variables with the new managed variables compared to the original variables
+# The 'dropna = False' argument will display the missing values
+# %%
+
+print("Count of personal annual income (with the recoding of the missing values): ")
+c2 = df["W1_P20"].value_counts(sort=False, dropna=False)
+print(c2)
+
+print(
+    "Counts of When you think about your future, are you generally 1 = optimistic, 2 = neither, or 3 = pessimistic? (with the recoding of the missing values)")
+opt = df["W1_F1"].value_counts(sort=False, dropna=False)
+print(opt)
+
+print(
+    "Percentage of the us economic situation : 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer (with the recoding of the missing values)")
+p1 = df["W1_G2"].value_counts(sort=False, dropna=True)
+print(p1)
+
+print("Count of W1_D1: [Barack Obama] How would you rate:")
+count_W1_D1 = df["W1_D1"].value_counts(sort=False, dropna=False)
+print(count_W1_D1)
+
+# %%
+# We chose to group values within individual variables for the W1_P20 variable representing
+# income level.
+# categorize quantitative variable based on customized splits are done by using cut function
+# we split the variable into 4 groups (1-7, 8-11, 12-15, 16-19)
+# remember that Python starts counting from 0, not 1
+
+# --------------------------- Grouping values within individual variables ----------------------------------------------
+
+print(
+    "The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k) 12-15(50k-99k), 16-19 (100k-175k or more))")
+df["W1_P20"] = pd.cut(df.W1_P20, [0, 7, 11, 15, 19])
+c10 = df["W1_P20"].value_counts(sort=False, dropna=True)
+print(c10)
+
+# %%
+
+# --------------------------- Counts of the variables ------------------------------------------------------------------
+# For verification purposes
+
+print("Counts of the us economic situation 1 = Better, 2 = About the same, 3 = Worse, -1 = Refused to answer:")
+c1 = df["W1_G2"].value_counts(sort=False)
+print(c1)
+
+print("Count of personal annual income :")
+c2 = df["W1_P20"].value_counts(sort=False)
+print(c2)
+
+print("Counts of When you think about your future, are you generally 1 = optimistic, 2 = neither, or 3 = pessimistic?")
+opt = df["W1_F1"].value_counts(sort=False)
+print(opt)
+
+# These variables have been managed
+
+
+# %%
+
+#  ---------------------------- Section # 3 / Visualising data ~ Graphs ------------------------------------------------
+
+# Visualizing categorical variables - IMPORTANT
+# in order for categorical variables to be ordered properly on the horizontal, or X axis, of
+# the univariate graph, we should convert your categorical variables, which are often formatted
+# as numeric variables, into a format that Python recognizes as categorical.
+
+# In our research question, we have W1_F1 (view on economic situation) has a categorical variable
+# and W1_F1, view of the respondants about the future, and W1_P20 witch is a ordinal variable (Still)
+# a type of categorical variable
+
+# We will convert the variables to categorical to provide the descriptive statistics :
+
+df["W1_G2"] = df["W1_G2"].astype("category")
+df["W1_F1"] = df["W1_F1"].astype("category")
+df["W1_P20"] = df["W1_P20"].astype("category")
+
+# Standard deviation and other descriptive statistics are for quantitative variables :
+
+print("Categorical variable's descriptive statistics are counts, top frequencies ...:")
+print("Describe the views of the economy's outcome")
+desc1 = df["W1_G2"].describe()
+print(desc1)
+
+print("Describe the views on the future by respondents")
+desc2 = df["W1_F1"].describe()
+print(desc2)
+
+print("Describe the personal annual income for the respondants")
+desc3 = df["W1_P20"].describe()
+print(desc3)
+
+# %%
+# UNIVARIATE GRAPH FOR CATEGORICAL VARIABLES
+
+# Let's plot our categorical variables :
+
+sns.countplot(x="W1_G2", data=df)
+plt.xlabel("-1 = refused, 1 = better, 2 = about the same, or 3 = worse")
+plt.title("Respondents views on the nation's economy compared to one year ago")
+
+# %%
+# UNIVARIATE GRAPH
+# Graph one variable : "Respondents views regarding their future :
+
+sns.countplot(x="W1_F1", data=df)
+plt.xlabel("-1 = refused, 1 = optimistic, 2 = neither optimistic nor pessimistic, 3 = pessimistic")
+plt.title("Respondents views regarding their future")
+
+# %%
+# UNI-VARIATE GRAPH
+# Graph one variable : Income groups reported by respondents :
+
+sns.countplot(x="W1_P20", data=df)
+plt.xlabel("Interval of annual income :1-7 (5k- 24k), 8-11(25k-49k) 12-15(50k-99k), 16-19 (100k-175k or more)")
+plt.title("Income groups reported by respondents")
+
+# %%
+# Uni-variate quantitative variable
+# For quantitative variable, the syntax we use in the Python program is slightly different.
+# We'll use this quantitative variable :
+
+print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
+
+sns.distplot(df["W1_D1"].dropna(), kde=False)
+plt.xlabel("Rating of the US President")
+plt.title("This is a plot rating the US President")
+print("This will give a histogram")
+
+# %%
+# Now let's display the graphics for the managed variables
+
+# Graphing a quatitative variable
+# The W1_P20 is not a ordinal variable, this is of example only
+# seaborn.distplot(Data["W1_P20"].dropna(), kde = False)
+# plt.xlabel("Group of personal annual income")
+# plt.title("Income groups reported by respondents")
+
+# Standard deviation and other descriptive statistics for quantitative variables
+print("Describe the views of the economy's outcome")
+desc1 = df["W1_G2"].describe()
+print(desc1)
+
+print("Describe the views on the future by respondents")
+desc2 = df["W1_F1"].describe()
+print(desc2)
+
+print("Describe the personnal annual income for the respondants")
+desc3 = df["W1_P20"].describe()
+print(desc3)
+
+# %%
+# we're going to be visualizing our association of interest by exploring the relationship between two variables.
+
+# ------------------ Make a decision about the role that each variable will play -----
+#
+# The explanatory variable is the  income level (X = W1_P20) the perception of the and the response
+# variable nation’s economic situation (Y = W1_G2 and/or W1_F1). Thus, using the graphing decisions
+# flow chart we will use a Categorical to Categorical bar chart to plot the associations between
+# our explanatory and response variables.
+# We have to convert the categorical variables to numeric to do a C -> C bar chart.
+
+# A effacer
+# When doing the visualisations, the variables have to be in numeric (* sinon cela ne va pas marcher)
+# Pour éviter ce problème, il est mieux de reconvertir les variables qui étaient en catégorie
+# En des variables numériques.
+
+# NOTE: for a bivariate graph, where our response variable (Y) is categorical, we will actually
+# need to convert this categorical response variable back to numeric.
+# This is because the bivariate
+# graph displays a mean on the y axis.
+
+# Setting variables you will be working with to numeric
+
+# Ancienne facon de faire :
+# df["W1_P20"] = df["W1_P20"].convert_objects(convert_numeric=True)
+# df["W1_G2"] = df["W1_G2"].convert_objects(convert_numeric=True)
+
+# Pandas a été mis à jour, maintenant, il faut utiliser :
+
+# df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
+# df["W1_P20"] = pd.to_numeric(df["W1_P20"], errors="coerce")
+# df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+
+# %%
+
+
+# BI VARIATE GRAPH :
+
+# Personnal income (Y = W1_G2) versus the US economy's situation ()
+# Convert our Y response variable back to numeric
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+
+print("This is the Categorical -> Categorical graph of US economy's situtation vs Personnal annual income")
+sns.factorplot(x="W1_P20", y="W1_G2", data=df, kind="bar", ci=None)  # ci=None suppresses error bars.
+plt.xlabel("Personnal annual income")
+plt.ylabel("The US economy's situation")
+
+# %%
+# BI VARIATE GRAPH :
+
+# Convert our Y response variable back to numeric
+df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
+# Personnal income versus how respondants think about the future
+
+sns.factorplot(x="W1_P20", y="W1_F1", data=df, kind="bar", ci=None)
+plt.xlabel("Personnal annual income")
+plt.ylabel("How the respondants think about the future")
+
+# %%
+# Graphing quantitative variables
+# We will use a scatter plot
+
+print("W1_D17: [Black Nationalists] How would you rate:")
+print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
+
+scater_plot1 = sns.regplot(x="W1_D17", y="W1_D1", fit_reg=False, data=df)
+plt.xlabel("How would you rate the president")
+plt.ylabel("Fatings from Black NAtionalists")
+plt.title("Scatter plot for the association between the rating of the US President by Black Nationalists")
+# We can add a fitting plot by removing the fit_reg = False
+
+# %%
+# bivariate graph, that is the categorical to quantitative bar chart.
+
+
+# %%
+# --------------------------------------------------------------------------------------------
+#                                PART 2. DATA ANALYSIS TOOLS
+# --------------------------------------------------------------------------------------------
+
+
+# Now that we have a research question, selected the data set and managed our variables
+# of interest and visualized their relationship graphically, we are ready to
+# test those relationships statistically.
+
+# A partir d'ici, toutes les variables doivent etre numériques.
+
+
+# ---------------------------- To calulate the ANOVA F-Statistics ----------------------------------
+
+# If we have a bi-variate statistical analysis tools for two variables i.e. y = ax + b + et
+# Analysis of variace Quantiative response variable (y) and Explanatory Categorical variable (x)
+# Using ols function for the computing of the F-statistic and associated p value.
+
+# As a reminder :
+
+print("W1_D1 is the variable is How would you rate the president at the time (Barack Obama)")
+print("W1_P20 is the Personnal Annual income")
+print(
+    "The income level is divided into 4 groups : 1-7 (5k- 24k), 8-11(25k-49k), 12-15(50k-99k), 16-19 (100k-175k or more))")
+
+model1 = smf.ols(formula='W1_D1 ~ C(W1_P20)', data=df)
+results1 = model1.fit()
+print(results1.summary())
+
+# %%
+
+# To interpret this finding fully, we need to examine the actual means for the variables
+# We will create a new data frame with the quatitative response variable and the categorical
+# explanatory variable
+
+sub3 = df[['W1_D1', 'W1_P20']].dropna()
+
+# Means and standard deviations in the new dataframe :
+
+print("Means for income level by the president's rating")
+m1 = sub3.groupby('W1_P20').mean()
+print(m1)
+
+print("standard deviations for income level by the president's rating")
+sd1 = sub3.groupby('W1_P20').std()
+print(sd1)
+
+# %%
+# POST HOC TEST :
+
+# In order to conduct post hoc paired comparisons in the context of my ANOVA, examining the association
+# between ethnicity and number of cigarettes smoked per month, I'm going to use
+# the Tukey HSDT, or Honestly Significant Difference Test.
+
+
+# mc1 is the object that will store the mutiple comparisons test
+# then, I include the quantitative response variable and the categorical explanatory variable
+mc1 = multi.MultiComparison(sub3['W1_D1'], sub3['W1_P20'])
+res1 = mc1.tukeyhsd()  # result (mc1) x the tukey post hoc test
+print(res1.summary())
+
+# %%
+# ---------------------------- Chi square test of independance ------------------------------------
+# Two categorical variable
+
+# Is the perception of the us economic situation dependent or indedendent of
+# the income levels?
+
+# In reference to our research question, the explanatory variable is the income
+# level (W1_P20) the perception of the and the response variable nation’s
+# economic situation (measured by W1_G2 and/or W1_F1).
+
+# Explanatory variable, idependant (x) variable
+# W1_P20: is the Personnal Annual income
+
+# The response variables (Y):
+# W1_G2: is the US economy's situation
+# W1_F1: is the Percentage of how the respondants think about the future
+
+# 1) request the contengency table of observerved counts
+
+print("Contengency table for the US economy's situation and Personnal Annual income")
+print("The first results include the table of counts of the response variable by the explanatory variable :")
+count1 = pd.crosstab(df["W1_G2"], df["W1_P20"])
+print(count1)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum = count1.sum(axis=0)
+col_percent = count1 / colsum
+print(col_percent)
+
+# 3) Chi-square :
+print("Chi-Square value, p-value, expected counts:")
+chi_sq = scipy.stats.chi2_contingency(count1)
+print(chi_sq)
+
+# If the output is set with the explanatory variable categories across the top of the table,
+# and response variable categories down the side, it will be the column percent that we want
+# to interpret.
+
+# %%
+
+# If I what to graph the percent of personnal annual income that have a positive
+# view of the us economic outcoume
+
+# C -> C plot => To plot this we need to :
+# 1) set our explanatory variable (X) to categorical
+# 2) set our response variable (Y) to numeric.
+
+df["W1_P20"] = df["W1_P20"].astype("category")
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+
+# Plot
+# X the categorical variable and Y the numeric variable
+sns.factorplot(x="W1_P20", y="W1_G2", data=df, kind="bar", ci=None)
+plt.xlabel("The Personnal Annual income")
+plt.ylabel("The US economy's situation")
+
+# If my explanatory variably had only two levels, I could interpret the two corresponding column
+# percentages and be able to say which group had a significantly higher rate of nicotine dependents.
+# But my explanatory variable has six categories. So I know that not all are equal. But I don't
+# know which are different and which are not.
+
+# %%
+#                               POST HOC TEST
+
+# When the explanatory variable has more than two levels, the chi-square statistic and associated
+# p-value, do not provide insight into why the null hypothesis can be rejected. It does not tell
+# us what way the rates of nicotine dependence are not equal across the frequency categories.
+
+# If we reject a null hypothesis, we need to perform comparisons for each pair of nicotine
+# dependent's rates across the six smoking frequency categories.
+
+# We need to do chi-square for each paired comparison
+# We need to recode to create new variables that allow us to choose only two frequency groups at a time.
+
+# --------------------------- Grouping values within individual variables --------------------------
+
+# It's easyer to understant if you graph the to variables
+# You need to recode for the comparaison of each "bar" of the graph
+# expluding form the statement all other values in the explanatory variable (i.e. x = "W1_P20")
+# We remaime this new added variable
+# And run the :
+# 1) request the contengency table of observerved counts
+# 2) generate the column % wich will show the % of in
+# 3) Compute the Chi-square :
+
+# %%
+
+# A reminder these are the levels of the explanatory variable : [0, 7, 11, 15, 19]
+# create a new variable with only the two levels we what to test
+
+# --------------------------- Post Hoc test # 1 ---------
+# 1 Recoding
+# bins = {0:7, 7:11}
+# df["COMP1v1"] = df["W1_P20"].map(bins)
+
+# 2 Cotengency table of obverved counts
+# count_v1 = pd.crosstab(df["W1_G2"], df["COMP1v1"])
+# print(count_v1)
+
+# 3 column percentages
+# colsum_count_v1 = count_v1.sum(axis=0)
+# colpct_count_v1 = count_v1/colsum
+# print(colpct_count_v1)
+
+# 4 Chi-square :
+# print("Chi-Square value, p-value, expected counts:")
+# chi_sq2 = scipy.stats.chi2_contingency(count_v1 )
+# print(chi_sq2)
+
+# %%
+
+# One can do all the pair comparison on all; but an easier way to do this is by doing this :
+import itertools
+
+for pair in itertools.combinations([0, 7, 11, 15, 19], 2):  # Calculates all the combinasions
+    count_subcategory = pd.crosstab(df["W1_P20"].isin(pair), df["W1_G2"])  # and provides the cross tabs
+    print("chi sq test of subcategory: {}".format(pair))
+    print(scipy.stats.chi2_contingency(count_subcategory))
+
+# %%
+# ---------------------------- Pearson Correlation -----------------------------------------------
+# ---------------------------- Relationship between two quantitative variables -------------------
+
+# Now let's find the correlation coefficients.
+# To do this, first, I create a new data frame that drops all missing, that is, N/A values for
+# each of the variables from the data set.
+
+# The pearson coefficient can not be calculated in the presence of N/A's in the dataset :
+df_clean = df.dropna()
+
+# The scatter plot on the other hand will not be useful. In general the scatterplot is not useful
+# for discrete variables (i.e. those that take on a limited number of values)
+
+print("W1_N1J: How would you rate the wealthiest 1%?")
+print("W1_N1A: How would you rate people on welfare?")
+print("W1_P20 : Income level")
+
+df_clean["W1_P20"] = pd.to_numeric(df_clean["W1_P20"], errors="coerce")
+
+print("The association between the income level and the rating of people on welfate")
+print("The correlation coefficient and the associate P-value.")
+print(scipy.stats.pearsonr(df_clean["W1_P20"], df_clean["W1_N1A"]))
+
+print("The association between the income level and the rating of the wealthiest 1%?")
+print("The correlation coefficient and the assoicated P-value :")
+print(scipy.stats.pearsonr(df_clean["W1_P20"], df_clean["W1_N1J"]))
+
+# R2 RSquared or Coefficient of Determination
+# r**2
+
+# %%
+# ---------------------------- Exploring Statistical Interactions ------------------------------------
+
+# ---------------------------- Chi square test of independance with moderation -----------------------
+# Two categorical variable and a moderating variable
+
+# First we need to test the existance of the relationship :
+
+# Is the perception of the us economic situation dependent or indedendent of
+# the income levels?
+
+# In reference to our research question, the explanatory variable is the income
+# level (W1_P20) the perception of the and the response variable nation’s
+# economic situation (measured by W1_G2 and/or W1_F1).
+
+# Explanatory variable, idependant (x) variable
+# W1_P20: is the Personnal Annual income
+
+# The response variables (Y):
+# W1_G2: is the US economy's situation
+# W1_F1: is the Percentage of how the respondants think about the future
+
+print(" 1 request the contengency table of observerved counts")
+print("")
+print("Contengency table for the US economy's situation and Personnal Annual income")
+print("The first results include the table of counts of the response variable by the explanatory variable :")
+count1 = pd.crosstab(df["W1_G2"], df["W1_P20"])
+print(count1)
+
+print("")
+print(" 2) Now we have to generate the column % wich will show the % of in")
+print("Column percentage :")
+colsum = count1.sum(axis=0)
+col_percent = count1 / colsum
+print(col_percent)
+
+print("")
+print(" 3) Chi-square :")
+print("Chi-Square value, p-value, expected counts:")
+chi_sq = scipy.stats.chi2_contingency(count1)
+print(chi_sq)
+
+# If the output is set with the explanatory variable categories across the top of the table,
+# and response variable categories down the side, it will be the column percent that we want
+# to interpret.
+
+# %%
+
+# First, we need to do a little bit of data management
+
+# Convert to numeric
+df["W1_A1"] = pd.to_numeric(df["W1_A1"], errors="coerce")
+
+# Decisions about missing values
+df["W1_A1"] = df["W1_A1"].replace(-1, np.nan)
+
+# The variables and name the count column
+print("W1_A1: How interested are you in what's going on in government and politics?")
+print("1 Extremely interested, 2 Very interested, 3 Moderately interested, 4 Slightly interested")
+print("5 Not interested at all, -1 Refused")
+b1 = pd.crosstab(index=df["W1_A1"], columns="counts")
+print(b1)
+
+
+# Let's create a new variable to characterize the interest in politics
+def politics(row):
+    if row["W1_A1"] == 1:
+        return 1
+    elif row["W1_A1"] == 2:
+        return 1
+    elif row["W1_A1"] == 3:
+        return 1
+    elif row["W1_A1"] == 4:
+        return 0
+    elif row["W1_A1"] == 5:
+        return 0
+
+
+# Now, let's add this variable in the dataframe
+df["politics"] = df.apply(lambda row: politics(row), axis=1)
+
+print("This is the counts for the new variable : 1 = interested in politics, 0 = Not interested in politics")
+c9 = pd.crosstab(index=df["politics"], columns="counts")
+print(c9)
+
+# %%
+# 4) For the chi-square interactions : we need to define new data frames with only the levels of
+#   the moderating variables = setting new data frames that includes individuals with ore without
+
+# the levels of interest in politics :
+sub11 = df[(df["politics"] == 1)].dropna()  # intereted in politics
+sub22 = df[(df["politics"] == 0)].dropna()  # not interested in politics
+
+# Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are INTERESTED in politics
+
+# 1 contingency table of observed counts for those who are INTERESTED in politics
+print("US economy's situation vs Personnal Annual income, for those who are INTERESTED in politics")
+count11 = pd.crosstab(sub11["W1_G2"], sub11["W1_P20"])
+print(count11)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum11 = count11.sum(axis=0)
+col_percent11 = count11 / colsum
+print(col_percent11)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are interested in politics:
+print("Chi-square for the US economy's situation vs Personnal Annual income, for those who are INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (INTERESTED in politique):")
+chi_sq11 = scipy.stats.chi2_contingency(count11)
+print(chi_sq11)
+print("The relationship IS significative")
+
+##              NOT INTERESTED in politics
+print("US economy's situation vs Personnal Annual income, for those who are NOT INTERESTED in politics")
+count12 = pd.crosstab(sub22["W1_G2"], sub22["W1_P20"])
+print(count12)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum12 = count12.sum(axis=0)
+col_percent12 = count12 / colsum
+print(col_percent12)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are NOT INTERESTED in politics :
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are NOT INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (NOT INTERESTED in politics):")
+chi_sq12 = scipy.stats.chi2_contingency(count12)
+print(chi_sq12)
+print("The relationship IS NOT significative")
+
+# %%
+# THIS IS GOOD BUT BEFORE CONCLUDING, WE NEED TO DO A POST-HOC TEST ###########
+
+# 4) For the chi-square interactions : we need to define new data frames with only the levels of
+#   the moderating variables = setting new data frames that includes individuals with ore without
+# the levels of interest in politics :
+
+sub11 = df[(df["W1_A1"] == 1)].dropna()
+sub12 = df[(df["W1_A1"] == 2)].dropna()
+sub13 = df[(df["W1_A1"] == 3)].dropna()
+sub14 = df[(df["W1_A1"] == 4)].dropna()
+sub15 = df[(df["W1_A1"] == 5)].dropna()
+
+# Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are EXTREMELY interested in politics
+
+###             1 Extremely interested :
+
+# 1 contingency table of observed counts for those who are EXTREMELY interested in politique
+print("association between smoking quantity and nicotine dependence for those who are EXTREMELY interested in politics")
+count11 = pd.crosstab(sub11["W1_G2"], sub11["W1_P20"])
+print(count11)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum11 = count11.sum(axis=0)
+col_percent11 = count11 / colsum
+print(col_percent11)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are EXTREMELY interested in politics:
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are EXTREMELY interested in politics")
+print("Chi-Square value, p-value, expected counts (EXTREMELY interested in politique):")
+chi_sq11 = scipy.stats.chi2_contingency(count11)
+print(chi_sq11)
+print("The relationship IS NOT significative")
+
+###             2 Very interested :
+# Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are VERY INTERESTED in politics
+
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are VERY INTERESTED in politics")
+count12 = pd.crosstab(sub12["W1_G2"], sub12["W1_P20"])
+print(count12)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum12 = count12.sum(axis=0)
+col_percent12 = count12 / colsum
+print(col_percent12)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are VERY INTERESTED in politics:
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are VERY INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (EXTREMELY interested in politique):")
+chi_sq12 = scipy.stats.chi2_contingency(count12)
+print(chi_sq12)
+print("The relationship IS NOT significative")
+
+###             3 Moderately interested
+
+# # Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are MODERATELY INTERESTED in politics
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are MODERATELY INTERESTED in politics in politics")
+count13 = pd.crosstab(sub13["W1_G2"], sub13["W1_P20"])
+print(count13)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum13 = count13.sum(axis=0)
+col_percent13 = count13 / colsum
+print(col_percent13)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are MODERATELY INTERESTED in politics:
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are MODERATELY INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (MODERATELY INTERESTED in politique):")
+chi_sq13 = scipy.stats.chi2_contingency(count13)
+print(chi_sq13)
+print("The relationship IS significative")
+
+###             4 Slightly interested
+# # Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are SLIGHTLY INTERESTED in politics
+
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are SLIGHTLY INTERESTED in politics")
+count14 = pd.crosstab(sub14["W1_G2"], sub14["W1_P20"])
+print(count14)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum14 = count14.sum(axis=0)
+col_percent14 = count14 / colsum
+print(col_percent14)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are SLIGHTLY INTERESTED in politics:
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are SLIGHTLY INTERESTED in politics")
+print("Chi-Square value, p-value, expected counts (SLIGHTLY INTERESTED in politique):")
+chi_sq14 = scipy.stats.chi2_contingency(count14)
+print(chi_sq14)
+print("The relationship IS NOT significative")
+
+# # Chi-Square for the relationship between INCOME LEVEL and perception of the US economy's situation
+# for those who are NOT INTERESTED AT ALL in politics
+
+##              5 Not interested at all
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are NOT INTERESTED AT ALL in politics")
+count15 = pd.crosstab(sub15["W1_G2"], sub15["W1_P20"])
+print(count15)
+
+# 2) Now we have to generate the column % wich will show the % of in
+print("Column percentage :")
+colsum15 = count15.sum(axis=0)
+col_percent15 = count15 / colsum
+print(col_percent15)
+
+# 3) Chi-square (for the US economy's situation and Personnal Annual income) for those who are NOT INTERESTED AT ALL in politics :
+print(
+    "Chi-square for the US economy's situation and Personnal Annual income, for those who are NOT INTERESTED AT ALL in politics")
+print("Chi-Square value, p-value, expected counts (NOT INTERESTED AT ALL in politics):")
+chi_sq15 = scipy.stats.chi2_contingency(count15)
+print(chi_sq15)
+print("The relationship IS NOT significative")
+
+# %%
+
+# Note: We had to re-import the dataset because of the data management done on the "Revenu" variable
+# ("W1_P20") that we have cut it in previous analysis - I don't know (yet) how to bring it back to it's original state ...
+
+# Importing the data set:
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+
+# New codes
+# We will convert the variables to numeric
+df["W1_G2"] = pd.to_numeric(df["W1_G2"], errors="coerce")
+df["W1_P20"] = pd.to_numeric(df["W1_P20"], errors="coerce")
+df["W1_F1"] = pd.to_numeric(df["W1_F1"], errors="coerce")
+df["W1_D1"] = pd.to_numeric(df["W1_D1"], errors="coerce")
+
+# Let's start the Data Management ~ decision about the data, missing values and creating secondary variables")
+
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+
+
+# %%
+# --------------------------------------------------------------------------------------------
+#                               PART 3. Regression Modeling in Practice
+# --------------------------------------------------------------------------------------------
+
+# ---------------------------- Basic linear regression ----------------------------
+
+# Data preparation and data management :
+
+# First, we need to do a little bit of data management
+
+# 1) Since our explanatory variable is categorical with more than two categories,
+# you will need to collapse it down to two categories,
+
+# Let's create a new variable to characterize the social economic status
+# For revenues less than $50,000 to $59,999 (labeled 12), they will be coded has 0;
+# and 1 otherwise
+
+
+def SocioEcoStatus(row):
+    if row["W1_P20"] < 12:
+        return 0
+    if row["W1_P20"] > 12:
+        return 1
+
+
+# Now, this new variable needs to be added to the dataframe
+df["SocioEcoStatus"] = df.apply(lambda row: SocioEcoStatus(row), axis=1)
+
+# This is to check the accuracy of the codes
+print("This is the counts for the new variable : 1 = high revenus, 0 = low revenues")
+count20 = pd.crosstab(index=df["SocioEcoStatus"], columns="counts")
+print(count20)
+#
+
+
+## In our research question’s variables, we do not have a situation with a
+##  a quantitative response variable. Nevertheless, we will be using another
+## variable from the dataset to determine if the association between the rating
+## of the US president at the time (quantitative response variable) is related
+## to the socioeconomic statuts (categorical explanatory variable).
+
+
+# now, let us test a linear regression model
+regression1 = smf.ols("W1_D1 ~ SocioEcoStatus", data=df).fit()
+print(regression1.summary())
+
+# %%
+# ---------------------------- Testing a Multiple Regression Model ----------------------------
+
+# ---------------- Preparation and data management prior to the linear regression -------------
+
+# We will start by doing a few data management and change the categorical variables that
+# we'll be working with to two categories
+
+# Let's create a new variable caracterising the level of interest in politics
+# Let's create a new variable to characterize the interest in politics
+
+# As a reminder
+print("As a reminder")
+print("W1_P20 is the Personnal Annual income has been transformed to a variable called SocioEcoStatus")
+print("W1_G2 is the US economy's situation has been transformed to economy_situation")
+print("W1_F1 is the perception of how the respondants think about the future is now : future_perception")
+print('W1_D1 is the rating of the former US president')
+print("W1_A12: Do you approve or disapprove of the way Barack Obama is handling his job as President?: is now approval")
+
+
+def PolInt(row):
+    if row["W1_A1"] == 1:
+        return 1
+    elif row["W1_A1"] == 2:
+        return 1
+    elif row["W1_A1"] == 3:
+        return 1
+    elif row["W1_A1"] == 4:
+        return 0
+    elif row["W1_A1"] == 5:
+        return 0
+
+
+# Now, let's add this variable in the dataframe
+df["PolInt"] = df.apply(lambda row: PolInt(row), axis=1)
+
+
+# Let's add an other variable to try to eleviate the R2
+# W2_QB1C:  Did you vote for a candidate for President?
+# We will have to do a little bit of recoding :
+# We will be adding this variable Gender
+
+def gender(row):
+    if row["PPGENDER"] == 2:
+        return 0
+    if row["PPGENDER"] == 1:
+        return 1
+
+
+# This variable is then added to the dataframe
+df["gender"] = df.apply(lambda row: gender(row), axis=1)
+
+
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+
+
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+
+
+def future_perception(row):
+    if row["W1_F1"] == 1:
+        return 1
+    if row["W1_F1"] == 2:
+        return 0
+    if row["W1_F1"] == 3:
+        return 0
+
+
+# This variable is then added to the dataframe
+df["future_perception"] = df.apply(lambda row: future_perception(row), axis=1)
+
+
+def approval(row):
+    if row["W1_A12"] == 1:
+        return 1
+    if row["W1_A12"] == 2:
+        return 0
+
+
+# This variable is then added to the dataframe
+df["approval"] = df.apply(lambda row: approval(row), axis=1)
+
+# %%
+# This is to verify the acquracy of the codes
+
+print("This is the counts for the new variable : 1 = high revenus, 0 = low revenues")
+count20 = pd.crosstab(index=df["SocioEcoStatus"], columns="counts")
+print(count20)
+
+print("This is the counts for the variable PolInt : 1 = interested in politics, 0 = Not interested in politics")
+c1_a = pd.crosstab(index=df["PolInt"], columns="counts")
+print(c1_a)
+
+print("This the gender variable’s count 1 = male, 0 = female")
+c1_b = pd.crosstab(index=df["gender"], columns="counts")
+print(c1_b)
+
+print("This is the counts for the economy_situation : 1 = Better, 0 = Worse")
+c1_c = pd.crosstab(index=df["economy_situation"], columns="counts")
+print(c1_c)
+
+print("This is the counts for future_perception : 1 = Optimistic, 0 = Pessimistic")
+c1_d = pd.crosstab(index=df["future_perception"], columns="counts")
+print(c1_d)
+
+print("This is the counts for approval variable : 1 = Approve, 0 = Disapprove")
+c1_e = pd.crosstab(index=df["approval"], columns="counts")
+print(c1_e)
+
+print(
+    "This is the counts of the socio-economic status : 1 = revenus less than $50,000 to $59,999 and 1 = revenus from $60,000 to $175,000 or more")
+c1_f = pd.crosstab(index=df["SocioEcoStatus"], columns="counts")
+print(c1_f)
+
+# %%
+regression2 = smf.ols("W1_D1 ~ SocioEcoStatus + PolInt", data=df).fit()
+print(regression2.summary())
+
+# %%
+regression6 = smf.ols("W1_D1 ~ SocioEcoStatus + economy_situation + future_perception + gender", data=df).fit()
+print(regression6.summary())
+
+# %%
+# This is the model we will keep :
+regression7 = smf.ols("W1_D1 ~ economy_situation + future_perception + gender + approval", data=df).fit()
+print(regression7.summary())
+
+# %%
+
+# Now for the new regression; we are adding the gender variable
+# regression3 = smf.ols("W1_D1 ~ SocioEcoStatus + W1_F1 + W1_G2 + gender", data =df).fit()
+# print(regression3.summary())
+
+# All the variables are statistically significant, but the R2 is weak (0,011)
+
+# %%
+# But if we replace the social economic status with the personnal annual income wich is
+# a ordinnal categorical variable :
+
+# Now for the new regression; we are adding the gender variable
+# regression4 = smf.ols("W1_D1 ~  PolInt + gender + W1_P20", data =df).fit()
+# print(regression4.summary())
+# We found that the variables are significant ... Personnal annual income is definetly a confounding variable
+# %%
+
+# Let's incorporate the Personnal income in the regression
+
+# regression5 = smf.ols("W1_D1 ~ W1_F1 + W1_G2 + gender + W1_P20", data = df).fit()
+# print(regression5.summary())
+
+# %%
+# ---------------------------- Test of the validity of the Model ----------------------------
+
+# 1 . NORMALITY OF THE RESIDUALS
+
+# qq-plot to evaluate the normality of the residual
+print("This a qq-plot to evaluate the normality of the residual")
+figure1 = sm.qqplot(regression7.resid, line="r")
+print(figure1)
+
+# %%
+# This is the plot of residuals
+stdres = pd.DataFrame(regression7.resid_pearson)
+plt.plot(stdres, 'o', ls='None')
+l = plt.axhline(y=0, color='r')
+plt.ylabel('Standardized Residual')
+plt.xlabel('Observation Number')
+
+# %%
+# 2. REGRESSION PLOTS
+
+# The following Python code can be used to generate a few more plots to help us
+# determine how specific explanatory variables contribute to the fit of our model.
+# additional regression diagnostic plots
+
+
+figure2 = plt.figure(figsize=(10, 7))
+figure2 = sm.graphics.plot_regress_exog(regression7, "approval", fig=figure2)
+print(figure2)
+
+# %%
+# 3. LEVERAGE PLOT
+
+# we can examine a leverage plot to identify observations that have an unusually
+# large influence on the estimation of the predicted value of the response variable,
+# Y, or that are outliers, or both.
+
+# leverage plot
+figure3 = sm.graphics.influence_plot(regression7, size=8)
+print(figure3)
+
+# %%
+
+# ----------------------------  Testing a Logistic Regression Model
+
+# Data preparation for this :
+
+# 1) If your response variable is categorical with more than two categories,
+# we will need to collapse it down to two categories, or subset your data to select observations from 2 categories.
+# 2) We will recode the Response variable into two categories
+
+# print("Let's collapse the explanatory variable into two groups")
+# df["W1_P20"] = pd.cut(df.W1_P20, [0, 15, 19])
+c110 = df["W1_P20"].value_counts(sort=False, dropna=True)
+print(c110)
+
+# %%
+logistic_reg1 = smf.logit(formula='future_perception ~ SocioEcoStatus + PolInt + economy_situation', data=df).fit()
+print(logistic_reg1.summary())
+
+print("Odds Ratios")
+params = logistic_reg1.params
+conf = logistic_reg1.conf_int()
+conf['OR'] = params
+conf.columns = ['Lower CI', 'Upper CI', 'OR']
+print(np.exp(conf))
+
+# %%
+logistic_reg2 = smf.logit(formula='future_perception ~ SocioEcoStatus + PolInt + economy_situation + gender',
+                          data=df).fit()
+print(logistic_reg2.summary())
+
+print("Odds Ratios")
+params = logistic_reg2.params
+conf = logistic_reg2.conf_int()
+conf['OR'] = params
+conf.columns = ['Lower CI', 'Upper CI', 'OR']
+print(np.exp(conf))
+
+# %%
+# --------------------------------------------------------------------------------------------
+#                               PART 4. Machine Learning
+# --------------------------------------------------------------------------------------------
+
+"""
+# ----------------------------  Building a Decision Tree with Python ----------
+
+Because decision tree analyses cannot handle any NA's in our data set,
+The next step is to create a clean data frame that drops all NA's.
+
+"""
+# Importing the data set:
+# This is for the machine learning with sklearn -> we need to locate where the data is lockated:
+os.chdir("/Users/annick/OneDrive/Documents/2_Data_analysis_research/1. Data_Analysis_and_Interpretation/0. Python_Working_Directory")
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+# %%
+# Let's do a bit of data management on the variables that we will be working with
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+df["W1_C1"] = df["W1_C1"].replace(-1, np.nan)
+df["W1_A1"] = df["W1_A1"].replace(-1, np.nan)
+df["W1_M1"] = df["W1_M1"].replace(-1, np.nan)
+df["W1_P11"] = df["W1_P11"].replace(-1, np.nan)
+
+# %%
+"""
+Running a Classification Tree.
+We will need to perform a decision tree analysis to test nonlinear relationships
+among a series of explanatory variables and a binary, categorical response variable.
+
+"""
+
+
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+
+
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+# %%
+df["economy_situation"] = df["economy_situation"].astype("category")
+
+# %%
+# Because decision tree analyses cannot handle any NA's in our data set,
+# the next step is to create a clean data frame that drops all NA's.
+
+df_clean = df.dropna()  # Because decision trees cannot handel na's
+
+# %%
+# To have a look at the data types and the summary statistics
+df_clean.dtypes
+
+
+df_clean.describe()
+
+# Next, we need to set our explanatory and response or target variables (Y).
+# And then include the train test split function for predictors and target.
+
+# %%
+
+"""
+Modeling and Prediction
+
+# Target :
+
+# W1_G2 Now thinking about the country's economy, would you say that compared to one year ago, the nation's economy is now better, about the same, or worse?
+
+# Predictors (Xi) that we have tested
+# W1_F1 When you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?
+# Don't add W1_F1 as a predictor
+# PPETHM: Race / Ethnicity
+# W1_P20 Which of the following income groups includes YOUR personal annual income (Do not include the income of other members of your household)?
+# PPINCIMP: Household Income
+# W1_C1: Generally speaking, do you usually think of yourself as a Democrat, a Republican, an Independent, or something else?
+# W1_A1 How interested are you in what’s going on in government and politics?
+# W1_D1 : [Barack Obama] How would you rate:
+# W1_M1: What is your religion?
+# W1_P11: Is anyone in your household currently unemployed?
+# PPAGE: Age
+# PPAGECAT: Age - 7 Categories
+
+
+# 1) Setting predictors and target variables
+
+# predictors = df_clean[["W1_G2", "W1_A1", "W1_A11", "PPGENDER", "W1_A12", "W1_P20", "W1_F2", "W1_J3A_B", "W1_J3A_C", "W1_J3A_C", "W1_B4", "W1_F3"]]
+# predictors = df_clean[["W1_F1", "W1_A1", "PPGENDER", "W1_P20", "W1_F2", "W1_J3A_B", "W1_J3A_C", "W1_J3A_C", "W1_B4", "W1_F3"]]
+
+# predictors = df_clean[["W1_P20", "W1_F1", "PPETHM"]] ==> accuracy_score = 0.37
+# predictors = df_clean[["W1_F1", "W1_P20"]] ==> accuracy_score = 0.46
+# predictors = df_clean[["W1_F1", "W1_C1", "W1_P20"]] ==> accuracy_score = 0.42
+# predictors = df_clean[["W1_C1", "W1_P20"]] ==> acc sc = 0.48
+# predictors = df_clean[["W1_A1" ,"W1_C1", "W1_P20"]] acc sc = 0.47
+# predictors = df_clean[["W1_A1" ,"W1_C1"]]  ==> accuracy_score = 0.54
+# predictors = df_clean[["W1_A1" ,"W1_C1", "W1_F1"]]  ==> accuracy_score = 0.51
+# predictors = df_clean[["W1_A1" ,"W1_C1", "PPETHM"]] ==> accuracy_score = 0.50
+# predictors = df_clean[["W1_A1" ,"W1_C1", "PPETHM", "W1_P11"]] ==> accuracy_score = 0.48
+# predictors = df_clean[["W1_A1" ,"W1_C1", "PPAGECAT"]]
+
+
+For the assignment W1
+
+predictors = df_clean[["W1_F1", "W1_C1", "W1_P20"]]
+targets = df_clean.W1_G2
+predictors = df_clean[["W1_A1" ,"W1_C1"]]
+targets = df_clean.W1_G2
+
+"""
+predictors = df_clean[["W1_A1", "W1_C1"]]
+targets = df_clean.economy_situation  # ==> accuracy_score = 0.749 or 0.77 in a other attempt?!
+
+# %%
+# 2) Split into training and testing sets
+
+
+# And then include the train test split function for predictors and target.
+# And set the size ratio to 60 % for the training sample and 40% for the test sample
+# by indicating test_size=.4.
+
+# I'll do a 60/40 split of the sample
+
+pred_train, pred_test, tar_train, tar_test = train_test_split(predictors, targets, test_size=0.4)
+# 3) Here I request the shape of these predictor and target training and
+# test samples.
+
+# This is the training sample : observations (% of the ratio of our original sample, and nb of explanatory variables")
+print("Training sample : observations and explanatory variables")
+print(pred_train.shape)
+
+print("The test sample : observations and explanatory variables")
+print(pred_test.shape)
+
+# Note that the total should give you the sample size, since whe decided to plit the sample into
+# 0.4 for the test sample and 0.6 for the training sample
+# Test it by doing len(df) lenght of the dataset
+
+# %%
+tar_train.shape
+# %%
+tar_test.shape
+# %%
+
+# Build the decision tree classifier model on training data
+classifier = DecisionTreeClassifier()
+# %%
+# We then use this 'classifier.fit' function which we pass the training predictors and
+# training targets to
+classifier = classifier.fit(pred_train, tar_train)
+# %%
+# Next we include the predict function where we predict for the test values
+predictions = classifier.predict(pred_test)
+# %%
+
+# then call in the confusion matrix function which we passed the target test sample to.
+# This shows the correct and incorrect classifications of our decision tree.
+# To check if the result make sence, at least, we should have the same number of labels of the
+# target variable, hase we have of columns
+
+sklearn.metrics.confusion_matrix(tar_test, predictions)
+
+# %%
+# We can also look at the accuracy score which is approximately 0.77,
+# which suggests that the decision tree model has classified 77%
+# of the sample correctly as either regular or not regular smokers.
+
+sklearn.metrics.accuracy_score(tar_test, predictions)
+# %%
+"""
+The graphviz conda package is not a Python package. It simply puts the graphviz files into your
+virtual env's Library/ directory. Look e.g. for dot.exe in the Library/bin/ directory.
+
+To install the graphviz Python package, you can use pip in the commande line:
+    [conda install pip] and [pip install graphviz].
+
+Always prefer conda packages if they are available over pip packages.
+Search for the package you need (conda search pkgxy) and then install it (conda install pkgxy).
+If it is not available, you can always build your own conda packages
+or you can try anaconda.org for user-built packages.
+"""
+
+# %%
+
+# Classification
+# Displaying the decision tree
+from sklearn import tree
+# from StringIO import StringIO
+
+from io import StringIO
+# from StringIO import StringIO
+
+from IPython.display import Image
+
+out = StringIO()
+tree.export_graphviz(classifier, out_file=out)
+
+import pydotplus
+
+graph = pydotplus.graph_from_dot_data(out.getvalue())
+Image(graph.create_png())
+
+# %%
+"""
+# ----------------------------  Building a Random Forest ---------------------------------------------------------------
+# The research question is :
+# To what extent is the perception of the US situation (W1_G2) associated with the level of income (W1_P20)?
+
+# The variables of interest in our research question
+
+print("W1_P20 is the Personnal Annual income")
+print("W1_G2 is the US economy's situation")
+print("W1_F1 is the Percentage of how the respondants think about the future")
+print("")
+# Determining the number of rows and columns in the dataset
+
+
+Explanatory variables :
+# Target : economy's situation
+
+
+# W1_G2 Now thinking about the country's economy, would you say that compared to one year ago, the nation's economy is
+# now better, about the same, or worse?
+# Predictors (Xi) that we have tested
+# W1_F1 When you think about your future, are you generally optimistic, pessimistic, or neither optimistic nor pessimistic?
+# Don't add W1_F1 as a predictor
+# PPETHM: Race / Ethnicity
+# W1_P20 Which of the following income groups includes YOUR personal annual income (Do not include the income of other members of your household)?
+# PPINCIMP: Household Income
+# W1_C1: Generally speaking, do you usually think of yourself as a Democrat, a Republican, an Independent, or something else?
+# W1_A1 How interested are you in what’s going on in government and politics?
+# W1_D1 : [Barack Obama] How would you rate:
+# W1_M1: What is your religion?
+# W1_P11: Is anyone in your household currently unemployed?
+# PPAGE: Age
+# PPAGECAT: Age - 7 Categories
+
+
+
+"""
+# %%
+"""
+Running a random forest;
+among a series of explanatory variables and a binary, categorical response variable.
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+"""
+
+
+
+
+# This variable is then added to the dataframe :
+
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+# %%
+df["economy_situation"] = df["economy_situation"].astype("category")
+
+# %%
+# Because random forest cannot handle any NA's in the data set,
+# the next step is to create a clean data frame that drops all NA's.
+
+df_clean = df.dropna()  # Because decision trees cannot handel na's
+
+# %%
+# To have a look at the data types and the summary statistics
+df_clean.dtypes
+df_clean.describe()
+
+# Next, we need to set our explanatory and response or target variables (Y).
+# And then include the train test split function for predictors and target.
+# %%
+# The we set our predictor and target variables => our explanatory and response
+# variables
+
+# predictors = df_clean[["W1_A1" ,"W1_C1"]] this gives an accuracy score of 0.749
+# predictors = df_clean[["W1_A1" ,"W1_C1", "W1_P20"]] this gives an accuracy score of 0.69250
+
+predictors = df_clean[["W1_A1", "W1_C1", "W1_P20", "PPAGE", "PPINCIMP", "W1_P11", "PPETHM"]]
+targets = df_clean.economy_situation  # ==> accuracy_score = 0.749 or 0.77 in a other attempt?!
+# %%
+"""
+Next I set my explanatory and response, or target variables, and
+then include the train test split function for predictors and target.
+And set the size ratio to 60% for the training sample, and 40% for
+the test sample.
+
+"""
+
+pred_train, pred_test, tar_train, tar_test = train_test_split(predictors, targets, test_size=0.4)
+# 3) Here I request the shape of these predictor and target training and
+# test samples.
+
+# This is the training sample : observations (% of the ratio of our original sample, and nb of explanatory variables")
+print("Training sample : observations and explanatory variables")
+print(pred_train.shape)
+
+print("The test sample : observations and explanatory variables")
+print(pred_test.shape)
+# %%
+# From the sklearn library, we'll import the RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+# %%
+"""
+Now that training and test data sets have already been created, we'll initialize
+the random forest classifier from SK Learn and indicate n_estimators= nb of variables.
+n_estimators are the number of trees you would build with the random forest
+algorithm.
+
+"""
+
+classifier = RandomForestClassifier(n_estimators=7)
+classifier = classifier.fit(pred_train, tar_train)
+
+# Then we do the prediction on the test data set
+predictions = classifier.predict(pred_test)
+
+# %%
+# Confusion matrix and accuracy scores
+print("This is the confusion matrix :")
+sklearn.metrics.confusion_matrix(tar_test, predictions)
+
+# %%
+print("This is the accuracy score :")
+sklearn.metrics.accuracy_score(tar_test, predictions)
+# %%
+
+"""
+74% of the individuals where classified correctly.
+Given that we don't interpret individual trees in a random forest,
+the most helpful information to be gotten from a forest
+is the measured importance for each explanatory variable.
+==> orthe features.
+ Based on how many votes or splits each has produced in the 2 tree ensemble.
+ """
+
+model = ExtraTreesClassifier()
+model.fit(pred_train, tar_train)
+print(model.feature_importances_)
+
+# %%
+
+"""
+Bases on the results the most important explanatory variable is the political
+afficilation in determining the perception of the US economy's situation.
+
+So were "n" number of trees actually needed to get this correct rate of classification?
+To determine what growing larger number of trees has brought us in terms of correct
+classification.
+We're going to use code that builds for us different numbers of trees,
+from one to "n", and provides the correct classification rate for each.
+This code will build for us random forest classifier from one to "n",
+and then finding the accuracy score for each of those trees from one to "n",
+and storing it in an array.
+
+Running a different number of trees and see the effect
+ of that on the accuracy of the prediction
+"""
+
+trees = range(4)
+accuracy = np.zeros(4)
+
+for idx in range(len(trees)):
+    classifier = RandomForestClassifier(n_estimators=idx + 1)
+    classifier = classifier.fit(pred_train, tar_train)
+    predictions = classifier.predict(pred_test)
+    accuracy[idx] = sklearn.metrics.accuracy_score(tar_test, predictions)
+
+plt.cla()
+plt.plot(trees, accuracy)
+
+"""
+From the plot of the accuracy score when we add new trees in the forest
+We don't need all these variables to predict the perception of the US economy's
+situation.
+"""
+# %%
+# ----------------------------  Running a Lasso Regression Analysis ---------------------------------------------------------------
+
+# Loading the dataset
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+df.head(5)
+
+#%%
+
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+df["W1_C1"] = df["W1_C1"].replace(-1, np.nan)
+df["W1_A1"] = df["W1_A1"].replace(-1, np.nan)
+df["W1_M1"] = df["W1_M1"].replace(-1, np.nan)
+df["W1_P11"] = df["W1_P11"].replace(-1, np.nan)
+df["PPINCIMP"] = df["PPINCIMP"].replace(-1 , np.nan)
+df["PPINCIMP"] = df["PPINCIMP"].replace(-2, np.nan)
+df["PPETHM"] = df["PPETHM"].replace(-1, np.nan)
+df["PPETHM"] = df["PPETHM"].replace(-2, np.nan)
+
+#%%
+
+# The response variable in our research question
+
+def economy_situation(row):
+    if row["W1_G2"] == 1:
+        return 1
+    if row["W1_G2"] == 2:
+        return 0
+    if row["W1_G2"] == 3:
+        return 0
+
+# This variable is then added to the dataframe
+df["economy_situation"] = df.apply(lambda row: economy_situation(row), axis=1)
+
+df["economy_situation"] = df["economy_situation"].astype("category")
+
+df_clean = df.dropna()
+
+#%%
+
+# Select predictor variables and target variable as separate data sets  
+predvar = df_clean[["W1_A1", "W1_C1", "W1_P20", "PPAGE", "PPINCIMP", "W1_P11", "PPETHM"]]
+
+# This is the target variable
+target = df_clean.economy_situation
+
+#%%
+
+# standardize predictors to have mean=0 and sd=1
+predictors = predvar.copy()
+
+from sklearn import preprocessing
+#%%
+predictors["W1_A1"] = preprocessing.scale(predictors["W1_A1"].astype("float64"))
+predictors["W1_C1"] = preprocessing.scale(predictors["W1_C1"].astype("float64"))
+predictors["W1_P20"] = preprocessing.scale(predictors["W1_P20"].astype("float64"))
+predictors["PPAGE"] = preprocessing.scale(predictors["PPAGE"].astype("float64"))
+predictors["PPINCIMP"] = preprocessing.scale(predictors["PPINCIMP"].astype("float64"))
+predictors["W1_P11"] = preprocessing.scale(predictors["W1_P11"].astype("float64"))
+predictors["PPETHM"] = preprocessing.scale(predictors["PPETHM"].astype("float64"))
+
+#%%
+# split data into train and test sets
+pred_train, pred_test, tar_train, tar_test = train_test_split(predictors, 
+                                                              target, 
+                                                              test_size=.3, 
+                                                              random_state=123)
+
+
+#%%
+# specify the lasso regression model
+model=LassoLarsCV(cv=10, precompute=False).fit(pred_train,tar_train)
+
+# print variable names and regression coefficients
+dict(zip(predictors.columns, model.coef_))
+#%%
+"""
+The first line of code for the plot, sets up the axes, the second line of code asks
+ Python to use the plot function from the mat plot lib library which we imported as
+ plt to plot the transform values of alpha on the horizontal access.
+ And the change in the regression coefficients in the coef_path_ attribute,
+ from the model results object and the y axis.
+"""
+# plot coefficient progression
+
+m_log_alphas = -np.log10(model.alphas_)
+ax = plt.gca()
+plt.plot(m_log_alphas, model.coef_path_.T)
+plt.axvline(-np.log10(model.alpha_), linestyle='--', color='k',
+            label='alpha CV')
+plt.ylabel('Regression Coefficients')
+plt.xlabel('-log(alpha)')
+plt.title('Regression Coefficients Progression for Lasso Paths')
+
+#%%
+# plot mean square error for each fold
+m_log_alphascv = -np.log10(model.cv_alphas_)
+plt.figure()
+plt.plot(m_log_alphascv, model.cv_mse_path_, ':')
+plt.plot(m_log_alphascv, model.cv_mse_path_.mean(axis=-1), 'k',
+         label='Average across the folds', linewidth=2)
+plt.axvline(-np.log10(model.alpha_), linestyle='--', color='k',
+            label='alpha CV')
+plt.legend()
+plt.xlabel('-log(alpha)')
+plt.ylabel('Mean squared error')
+plt.title('Mean squared error on each fold')
+         
+#%%
+# MSE from training and test data
+from sklearn.metrics import mean_squared_error
+train_error = mean_squared_error(tar_train, model.predict(pred_train))
+test_error = mean_squared_error(tar_test, model.predict(pred_test))
+print ('training data MSE')
+print(train_error)
+print ('test data MSE')
+print(test_error)
+#%%
+# R-square from training and test data
+rsquared_train=model.score(pred_train,tar_train)
+rsquared_test=model.score(pred_test,tar_test)
+print ('training data R-square')
+print(rsquared_train)
+print ('test data R-square')
+print(rsquared_test)
+
+
+# %%
+# ----------------------------  Running a k-Means Cluster Analysis ---------------------------------------------------------------
+
+
+df = pd.read_csv("ool_pds.csv", low_memory=False)
+
+#%%
+"""
+Data management
+"""
+df["W1_P20"] = df["W1_P20"].replace(-1, np.nan)
+df["W1_G2"] = df["W1_G2"].replace(-1, np.nan)
+df["W1_F1"] = df["W1_F1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(-1, np.nan)
+df["W1_D1"] = df["W1_D1"].replace(998, np.nan)
+df["W1_A12"] = df["W1_A12"].replace(-1, np.nan)
+df["W1_C1"] = df["W1_C1"].replace(-1, np.nan)
+df["W1_A1"] = df["W1_A1"].replace(-1, np.nan)
+df["W1_M1"] = df["W1_M1"].replace(-1, np.nan)
+df["W1_P11"] = df["W1_P11"].replace(-1, np.nan)
+df["PPINCIMP"] = df["PPINCIMP"].replace(-1 , np.nan)
+df["PPINCIMP"] = df["PPINCIMP"].replace(-2, np.nan)
+df["PPETHM"] = df["PPETHM"].replace(-1, np.nan)
+df["PPETHM"] = df["PPETHM"].replace(-2, np.nan)
+
+
+#%%
+df_clean = df.dropna()
+
+#%%
+
+# Subset - data frame that contains only the variables we will need
+cluster = df_clean[["W1_A1", "W1_C1", "W1_P20", "PPAGE", "PPINCIMP", "W1_P11", "PPETHM"]]
+cluster.describe()
+
+#%%
+"""
+In cluster analysis variables with large values
+ contribute more to the distance calculations.
+ Variables measured on different scales should be standardized
+ prior to clustering, so
+ that the solution is not driven by variables measured on larger scales.
+ We use the following code to standardize the clustering variables to have a mean of
+ 0, and a standard deviation of 1.
+
+"""
+ 
+# Standerdized clustering variables to have a mean = 0 and sd = 1
+
+# Let's create a copy of the dataset
+clustervar = cluster.copy
+
+from sklearn import preprocessing
+
+
+clustervar=cluster.copy()
+clustervar["W1_A1"]=preprocessing.scale(clustervar["W1_A1"].astype('float64'))
+clustervar["W1_C1"]=preprocessing.scale(clustervar["W1_C1"].astype('float64'))
+clustervar["W1_P20"]=preprocessing.scale(clustervar["W1_P20"].astype('float64'))
+clustervar["PPAGE"]=preprocessing.scale(clustervar["PPAGE"].astype('float64'))
+clustervar["PPINCIMP"]=preprocessing.scale(clustervar["PPINCIMP"].astype('float64'))
+clustervar["W1_P11"]=preprocessing.scale(clustervar["W1_P11"].astype('float64'))
+clustervar["PPETHM"]=preprocessing.scale(clustervar["PPETHM"].astype('float64'))
+
+#%%
+# Let's split the data into train and test sets
+clus_train, clus_test = train_test_split(clustervar, test_size = 0.3, random_state = 123) # random_state = 123 for reproducibility
+
+#%%
+# Now we can run our cluster analysis
+# we will use it to calculate the average distance of
+# the observations from the cluster centroids.
+
+from scipy.spatial.distance import cdist
+
+# We will use this object when we specify the number of clusters we want to test,
+# which will give us the cluster solutions for k equals 1 to k equals 9 clusters
+
+clusters = range(1,10)
+
+
+# this will be used to store the average distance values that we will calculate for
+# the 1 to 9 cluster solutions 
+meandist = []
+
+
+# The for k in clusters: code tells Python to run the cluster analysis code below for
+# each value of k in the cluster's object.
+for k in clusters:
+    model = KMeans(n_clusters = k) # number of clusters 1 -> 9
+    model.fit(clus_train)           # number of clusters 1 -> 9
+    clusassign = model.predict(clus_train) # clusassign that will store for each observation
+                                           # the cluster number to which it was assigned based on the cluster analysis.
+ 
+    meandist.append(sum(np.min(cdist(clus_train, model.cluster_centers_, "euclidean"), axis = 1)) #  computes the average
+                                                                                                  #  of the sum of the distances between each observation in the cluster centroids
+    / clus_train.shape[0])
+    
+#%%
+# Now we can plot the elbow curve
+plt.plot(clusters, meandist)
+plt.xlabel("Number of clusters")
+plt.ylabel("Average distance")
+plt.title("Selecting number of k with the Elbow Method")
+
+#%%
+# Interpreting the 3 clusters solution
+model3 = KMeans(n_clusters = 3)
+model3.fit(clus_train)
+clusassign = model3.predict(clus_train)
+
+#%%
+"""
+Canonical Discriminant Analysis
+- Creates a smaller number of variables.
+- Linear combinations of clustering variables.
+- Canonical variables are ordered by proportion of variance accounted for.
+- Majority of variance is accounted for by first few canonical variables.
+"""
+
+# Plotting the clusters
+from sklearn.decomposition import PCA
+pca_2 = PCA(2)
+plot_columns = pca_2.fit_transform(clus_train)
+plt.scatter(x = plot_columns[:,0], y = plot_columns[:, 1], c = model3.labels_,)
+plt.xlabel("Canonical Variable 1")
+plt.ylabel("Canonical Variable 2")
+plt.title("Scatterplot of Canonical Variables for 3 CLusters")
+plt.show()
+
+"""
+Here is the scatter plot.
+ What this shows is that these two clusters are densely packed,
+ meaning that the observations within the clusters are pretty highly correlated with
+ each other, and within cluster variance is relatively low.
+ But they appear to have a good deal of overlap,
+ meaning that there is not good separation between these two clusters.
+ On the other hand, this cluster here shows better separation, but
+ the observations are more spread out indicating less correlation among
+ the observations and higher within cluster variance.
+
+"""
+
+#%%
+"""
+BEGIN multiple steps to merge cluster assignment with clustering variables to examine
+cluster variable means by cluster
+"""
+# create a unique identifier variable from the index for the 
+# cluster training data to merge with the cluster assignment variable
+clus_train.reset_index(level=0, inplace=True)
+# create a list that has the new index variable
+cluslist=list(clus_train['index'])
+# create a list of cluster assignments
+labels=list(model3.labels_)
+# combine index variable list with cluster assignment list into a dictionary
+newlist=dict(zip(cluslist, labels))
+newlist
+# convert newlist dictionary to a dataframe
+newclus=DataFrame.from_dict(newlist, orient='index')
+newclus
+# rename the cluster assignment column
+newclus.columns = ['cluster']
+
+# now do the same for the cluster assignment variable
+# create a unique identifier variable from the index for the 
+# cluster assignment dataframe 
+# to merge with cluster training data
+newclus.reset_index(level=0, inplace=True)
+# merge the cluster assignment dataframe with the cluster training variable dataframe
+# by the index variable
+merged_train=pd.merge(clus_train, newclus, on='index')
+merged_train.head(n=100)
+# cluster frequencies
+merged_train.cluster.value_counts()
+
+#%%
+"""
+END multiple steps to merge cluster assignment with clustering variables to examine
+cluster variable means by cluster
+"""
+
+# FINALLY calculate clustering variable means by cluster
+clustergrp = merged_train.groupby('cluster').mean()
+print ("Clustering variable means by cluster")
+print(clustergrp)
+
+
+# validate clusters in training data by examining cluster differences in GPA using ANOVA
+# first have to merge GPA with clustering variables and cluster assignment data 
+gpa_data=df_clean['GPA1']
+# split GPA data into train and test sets
+gpa_train, gpa_test = train_test_split(gpa_data, test_size=.3, random_state=123)
+gpa_train1=pd.DataFrame(gpa_train)
+gpa_train1.reset_index(level=0, inplace=True)
+merged_train_all=pd.merge(gpa_train1, merged_train, on='index')
+sub1 = merged_train_all[['GPA1', 'cluster']].dropna()
+
+import statsmodels.formula.api as smf
+import statsmodels.stats.multicomp as multi 
+
+gpamod = smf.ols(formula='GPA1 ~ C(cluster)', data=sub1).fit()
+print (gpamod.summary())
+
+print ('means for GPA by cluster')
+m1= sub1.groupby('cluster').mean()
+print (m1)
+
+print ('standard deviations for GPA by cluster')
+m2= sub1.groupby('cluster').std()
+print (m2)
+
+mc1 = multi.MultiComparison(sub1['GPA1'], sub1['cluster'])
+res1 = mc1.tukeyhsd()
+print(res1.summary())
