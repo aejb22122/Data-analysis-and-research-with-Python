@@ -1,2 +1,128 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 24 14:27:44 2018
+
+@author: annick-eudes
+"""
 
 # ------------------------------- The basics : the titanic --------------------------------
+# ------------------------- Importing the needed libraries --------------------
+
+# Importing the libraries that we will need for the data analysis
+import pandas as pd
+
+#%%
+# Importing the data set
+# Loading the train and test datasets to create two DataFrames
+train_url = "http://s3.amazonaws.com/assets.datacamp.com/course/Kaggle/train.csv"
+
+test_url = "http://s3.amazonaws.com/assets.datacamp.com/course/Kaggle/test.csv"
+
+train = pd.read_csv(train_url)
+test = pd.read_csv(test_url)
+
+#%%
+# Printing the first 5 rows of the data : the train and test dataframes
+print(train.head())
+print(test.head())
+
+#%%
+# ------------------------- Structure of the data -----------------------------
+print("This is the dimension of the test dataset")
+test.shape
+
+print("This is the dimension of the train data set")
+train.shape
+
+#%%
+test.describe()
+train.describe()
+
+#%%
+"""
+Female vs Male
+"""
+# Passengers that survived vs passengers that passed away
+print("This is the counts of the passengers that survived vs passengers that passed away")
+print(train["Survived"].value_counts())
+
+# As proportions
+print("This is the proportion of the passengers that survived vs passengers that passed away")
+print(train["Survived"].value_counts(normalize = True))
+
+
+# Males that survived vs males that passed away
+print("This is the counts of the males that survives vs the males that passed away")
+print(train["Survived"][train["Sex"] == 'male'].value_counts())
+
+# Females that survived vs Females that passed away
+print("This is the counts of the female that survived vs Females that passed away")
+print(train["Survived"][train["Sex"] == 'female'].value_counts())
+
+# Normalizing male survival
+print("This is the proportion of the female that survived vs Females that passed away")
+print(train["Survived"][train["Sex"] == 'male'].value_counts(normalize = True))
+
+# Normalizing female survival
+print("This is the proportion of the female that survived vs Females that passed away")
+print(train["Survived"][train["Sex"] == 'female'].value_counts(normalize = True))
+
+#%%
+"""
+What about age?
+"""
+# 1. Creating a column Child and assign to 'NaN'
+train["Child"] = float('NaN')
+
+# Assigning 1 to passengers under 18, 0 to those 18 or older. Print the new column.
+train["Child"][train["Age"] < 18] = 1
+train["Child"][train["Age"] >= 18] = 0
+print(train["Child"])
+
+# Printing normalized Survival Rates for passengers under 18
+print(train["Survived"][train["Child"] == 1].value_counts(normalize = True))
+
+# Printing normalized Survival Rates for passengers 18 or older
+print(train["Survived"][train["Child"] == 0].value_counts(normalize = True))
+
+#%%
+"""
+First Prediction
+"""
+
+# Let's create a copy of test: test_one
+test_one = test
+
+# Initializing a Survived column to 0
+test_one["Survived"] = 0
+
+# Setting Survived to == 1 if Sex equals == "female"
+test_one["Survived"][test_one["Sex"] == "female"] = 1
+print(test_one.Survived)
+
+
+#%%
+"""
+Decision trees
+"""
+
+# Cleaning and Formatting the Data
+
+# Converting the male and female groups to integer form as so :
+train["Sex"][train["Sex"] == "male"] = 0
+train["Sex"][train["Sex"] == "female"] = 1
+
+# Imputing the Embarked variable
+train["Embarked"] = train["Embarked"].fillna("S")
+
+# Converting the Embarked classes to integer form
+train["Embarked"][train["Embarked"] == "S"] = 0
+train["Embarked"][train["Embarked"] == "C"] = 1
+train["Embarked"][train["Embarked"] == "Q"] = 2
+
+# Printing the Sex and Embarked columns
+print(train["Sex"])
+print(train["Embarked"])
+
+#%%
